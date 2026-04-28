@@ -2,7 +2,7 @@
 
 ![DukanDost Pro Banner](./assets/banner.png)
 
-*Built by [Maajanki Web Tech Digital Agency](https://maajnakiwebtech.com)*
+*Built by [Maajanki Web Tech Digital Agency](https://maajankiwebtech.com/)*
 
 **DukanDost Pro** is a comprehensive, full-stack platform designed to serve as both a website and a mobile application. It empowers retail businesses, providing state-of-the-art tools for store management, invoicing, analytics, and intelligent automation.
 
