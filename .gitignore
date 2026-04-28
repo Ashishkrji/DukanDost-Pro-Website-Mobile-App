@@ -1,0 +1,14 @@
+# Jetro & MCP configuration (contains local paths and secrets)
+.mcp.json
+.jetro/
+
+# AI agent instructions
+AGENT.md
+CLAUDE.md
+.windsurfrules
+.agents/
+.cursor/
+
+# OS generated files
+.DS_Store
+Thumbs.db
