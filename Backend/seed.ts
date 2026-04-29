@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 async function seed() {
-  const uri = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/dukandost-pro';
+  const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/dukandost-pro';
   
   console.log('Connecting to:', uri);
   

@@ -11,7 +11,7 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const seedAdmin = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/dukandost');
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/dukandost');
     console.log('Connected to MongoDB for seeding...');
 
     const email = 'admin@dukandostpro.com';
