@@ -77,7 +77,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
         { fullName: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
         { businessName: { $regex: search, $options: 'i' } },
-        { phoneNumber: { $regex: search, $options: 'i' } }
+        { phone: { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -92,7 +92,7 @@ export const getAllUsers = async (req: Request, res: Response) => {
 
 export const getBusinessInquiries = async (req: Request, res: Response) => {
   try {
-    const inquiries = await BusinessInquiry.find().populate('userId', 'fullName businessName email phoneNumber').sort({ createdAt: -1 });
+    const inquiries = await BusinessInquiry.find().populate('userId', 'fullName businessName email phone').sort({ createdAt: -1 });
     res.status(200).json({ success: true, inquiries });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to fetch inquiries' });

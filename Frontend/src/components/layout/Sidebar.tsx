@@ -8,7 +8,7 @@ import {
   LayoutDashboard, BookOpen, ReceiptText, Package, QrCode,
   Users, Sparkles, ShoppingBag, MessageSquare, Settings,
   LogOut, PlusCircle, Gift, Star, BarChart3, X, Store,
-  ChevronRight, Bell, Lock, Shield
+  ChevronRight, Bell, Lock, Shield, Truck, Megaphone
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -24,6 +24,7 @@ export default function Sidebar() {
       items: [
         { name: t('dashboard'), href: '/dashboard', icon: LayoutDashboard, badge: null },
         { name: t('khata'), href: '/khata', icon: BookOpen, badge: null },
+        { name: t('vendors'), href: '/vendors', icon: Truck, badge: null },
         { name: t('invoices'), href: '/invoices', icon: ReceiptText, badge: null },
         { name: t('inventory'), href: '/inventory', icon: Package, badge: null },
       ]
@@ -41,6 +42,7 @@ export default function Sidebar() {
         { name: t('staff'), href: '/staff', icon: Users, badge: null },
         { name: t('ai'), href: '/ai', icon: Sparkles, badge: null },
         { name: t('store'), href: '/store', icon: ShoppingBag, badge: null },
+        { name: 'Marketing Campaigns', href: '/campaigns', icon: Megaphone, badge: 'BUSINESS' },
         { name: 'WhatsApp Reminders', href: '/reminders', icon: Bell, badge: 'PREMIUM' },
         { name: t('vouchers'), href: '/vouchers', icon: Gift, badge: null },
         { name: t('community'), href: '/community', icon: MessageSquare, badge: null },
@@ -129,7 +131,7 @@ export default function Sidebar() {
                   
                   const userPlan = authUser?.plan || 'Starter';
                   const isProFeature = ['/inventory', '/staff', '/reports', '/vouchers'].some(p => item.href.startsWith(p));
-                  const isBusinessFeature = ['/ai', '/store', '/reminders'].some(p => item.href.startsWith(p));
+                  const isBusinessFeature = ['/ai', '/store', '/reminders', '/campaigns'].some(p => item.href.startsWith(p));
                   
                   const isLocked = (isProFeature && userPlan === 'Starter') || 
                                    (isBusinessFeature && (userPlan === 'Starter' || userPlan === 'Pro'));

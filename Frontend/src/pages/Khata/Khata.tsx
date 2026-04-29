@@ -26,6 +26,8 @@ export default function Khata() {
   const [newPhone, setNewPhone] = useState('');
   const [newAddress, setNewAddress] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [openingBalance, setOpeningBalance] = useState<string>('');
+  const [amountPaid, setAmountPaid] = useState<string>('');
 
   // ── Bulk selection ────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -131,8 +133,18 @@ export default function Khata() {
       return;
     }
 
-    addCustomer({ name: newName.trim(), phone: newPhone.trim(), address: newAddress, email: newEmail });
+    const initialBalance = Number(openingBalance || 0) - Number(amountPaid || 0);
+
+    addCustomer({ 
+      name: newName.trim(), 
+      phone: newPhone.trim(), 
+      address: newAddress, 
+      email: newEmail,
+      balance: initialBalance,
+      status: initialBalance > 0 ? 'Udhaar' : 'Up-to-date'
+    });
     setNewName(''); setNewPhone(''); setNewAddress(''); setNewEmail('');
+    setOpeningBalance(''); setAmountPaid('');
     setShowAddModal(false);
   };
 
@@ -442,6 +454,38 @@ export default function Khata() {
             value={newAddress}
             onChange={e => setNewAddress(e.target.value)}
           />
+          
+          <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-100 mt-4">
+            <div className="col-span-2">
+              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Initial Payment Details</h4>
+            </div>
+            <InputField
+              label="Purana Baki (Opening Udhaar)"
+              placeholder="₹0"
+              type="number"
+              value={openingBalance}
+              onChange={e => setOpeningBalance(e.target.value)}
+            />
+            <InputField
+              label="Aaj Jama Kiya (Amount Paid)"
+              placeholder="₹0"
+              type="number"
+              value={amountPaid}
+              onChange={e => setAmountPaid(e.target.value)}
+            />
+          </div>
+
+          {(openingBalance || amountPaid) && (
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex justify-between items-center mt-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Calculated Balance</span>
+              <span className={cn(
+                "font-mono font-bold text-lg",
+                (Number(openingBalance || 0) - Number(amountPaid || 0)) > 0 ? "text-red-600" : "text-green-600"
+              )}>
+                ₹{(Number(openingBalance || 0) - Number(amountPaid || 0)).toLocaleString('en-IN')}
+              </span>
+            </div>
+          )}
         </div>
       </Modal>
     </div>

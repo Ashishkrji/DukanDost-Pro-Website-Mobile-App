@@ -33,6 +33,8 @@ interface AuthState {
   logout: () => void;
   setError: (error: string | null) => void;
   setLoading: (isLoading: boolean) => void;
+  fetchProfile: () => Promise<void>;
+  updateUserProfile: (data: Partial<User>) => Promise<void>;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -66,6 +68,29 @@ export const useAuthStore = create<AuthState>()(
 
       setError: (error) => set({ error }),
       setLoading: (isLoading) => set({ isLoading }),
+
+      fetchProfile: async () => {
+        try {
+          const res = await axios.get(`${API_URL}/auth/profile`);
+          if (res.data?.data?.user) {
+            set({ user: res.data.data.user });
+          }
+        } catch (error) {
+          console.error("Failed to fetch latest profile");
+        }
+      },
+
+      updateUserProfile: async (data: Partial<User>) => {
+        try {
+          const res = await axios.put(`${API_URL}/auth/profile`, data);
+          if (res.data?.data?.user) {
+            set({ user: res.data.data.user });
+          }
+        } catch (error) {
+          console.error("Failed to update profile", error);
+          throw error;
+        }
+      },
     }),
     {
       name: 'dukandost-auth',

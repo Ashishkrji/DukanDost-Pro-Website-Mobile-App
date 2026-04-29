@@ -5,11 +5,31 @@ import cookieParser from 'cookie-parser';
 import { connectDB } from './config/db.ts';
 import routes from './routes/index.ts';
 import { initReminderScheduler } from './utils/scheduler.ts';
+import { initSentry, sentryErrorHandler } from './config/sentry.ts';
+
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 
 const app = express();
+initSentry(app);
+
+// ── Rate Limiting ──────────────────────────────────────────
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { message: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/', limiter);
+
 const PORT = process.env.PORT || 5000;
 
 // ── Middleware ──────────────────────────────────────────────
+app.use(helmet());
+app.use(compression());
 app.use(cors({
   origin: process.env.FRONTEND_URL || '*',
   credentials: true
@@ -39,6 +59,9 @@ app.get('/health', (_req, res) => {
 app.use((_req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
+
+// The error handler must be before any other error middleware and after all controllers
+sentryErrorHandler(app);
 
 // ── Global Error Handler ───────────────────────────────────
 app.use((err: any, _req: any, res: any, _next: any) => {

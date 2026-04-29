@@ -6,6 +6,11 @@ const transactionSchema = new mongoose.Schema({
     ref: 'Customer',
     required: true,
   },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   type: {
     type: String,
     enum: ['DIYA', 'LIYA'],   // DIYA = we gave credit; LIYA = we received payment
@@ -29,7 +34,9 @@ const transactionSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
-// Index for fast customer queries
+// Indexes for fast queries
+transactionSchema.index({ userId: 1 });
 transactionSchema.index({ customerId: 1, date: -1 });
+transactionSchema.index({ date: -1 });
 
 export default mongoose.model('Transaction', transactionSchema);

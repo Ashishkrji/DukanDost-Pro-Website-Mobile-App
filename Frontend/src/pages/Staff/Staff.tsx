@@ -9,9 +9,42 @@ export default function Staff() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newName, setNewName] = useState('');
-  const [newRole, setNewRole] = useState('Cashier');
+  const [newRole, setNewRole] = useState('Sales');
   const [newPhone, setNewPhone] = useState('');
+  const [newEmail, setNewEmail] = useState('');
   const [newSalary, setNewSalary] = useState('');
+  const [hasAppAccess, setHasAppAccess] = useState(false);
+
+  const { addStaff } = useStore();
+
+  const handleAddStaff = async () => {
+    if (!newName || !newPhone || !newSalary) {
+      showToast('Saari details bhariye!', 'error');
+      return;
+    }
+
+    if (hasAppAccess && !newEmail) {
+      showToast('App access ke liye email zaroori hai!', 'error');
+      return;
+    }
+
+    await addStaff({
+      name: newName,
+      role: newRole,
+      phone: newPhone,
+      email: newEmail,
+      salary: Number(newSalary),
+      hasAppAccess
+    });
+    
+    setShowAddModal(false);
+    // Reset fields
+    setNewName('');
+    setNewPhone('');
+    setNewEmail('');
+    setNewSalary('');
+    setHasAppAccess(false);
+  };
 
   const filtered = staff.filter(s =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -171,7 +204,7 @@ export default function Staff() {
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
-            <Button onClick={() => { showToast('Staff member added!'); setShowAddModal(false); }} icon={<PlusCircle size={15} />}>Add Member</Button>
+            <Button onClick={handleAddStaff} icon={<PlusCircle size={15} />}>Add Member</Button>
           </>
         }
       >
@@ -181,10 +214,44 @@ export default function Staff() {
             label="Role"
             value={newRole}
             onChange={e => setNewRole(e.target.value)}
-            options={['Cashier', 'Store Manager', 'Stock Keeper', 'Delivery Boy', 'Packer', 'Sales'].map(r => ({ value: r, label: r }))}
+            options={['Sales', 'Cashier', 'Store Manager', 'Stock Keeper', 'Delivery Boy', 'Packer'].map(r => ({ value: r, label: r }))}
           />
           <InputField label="Phone Number" placeholder="+91 98765 12345" type="tel" required value={newPhone} onChange={e => setNewPhone(e.target.value)} />
           <InputField label="Monthly Salary (₹)" placeholder="14000" type="number" required value={newSalary} onChange={e => setNewSalary(e.target.value)} />
+          
+          <div className="pt-4 border-t border-slate-100">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-bold text-slate-900">App Access Diye?</p>
+                <p className="text-xs text-slate-500">Staff members ko login karne ki ijazat de sakte hain.</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={hasAppAccess}
+                  onChange={e => setHasAppAccess(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              </label>
+            </div>
+            
+            {hasAppAccess && (
+              <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                <InputField 
+                  label="Email Address" 
+                  placeholder="staff@email.com" 
+                  type="email" 
+                  required 
+                  value={newEmail} 
+                  onChange={e => setNewEmail(e.target.value)} 
+                />
+                <p className="text-[10px] text-blue-600 mt-2 font-medium bg-blue-50 p-2 rounded-lg italic">
+                  * Staff member ko temporary password email ya owner ke through milega.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </Modal>
     </div>

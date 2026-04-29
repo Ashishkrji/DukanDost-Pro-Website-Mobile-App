@@ -20,7 +20,8 @@ const COLORS = ['#FF6B00', '#00C853', '#6C3483', '#1A1A2E', '#0EA5E9', '#F59E0B'
 export default function Dashboard() {
   const { 
     transactions, customers, products, orders, showToast, user,
-    fetchCustomers, fetchTransactions, fetchProducts, fetchStaff, fetchPayments, fetchNotifications
+    fetchCustomers, fetchTransactions, fetchProducts, fetchStaff, fetchPayments, fetchNotifications,
+    fetchVendors, vendors
   } = useStore();
 
   const { t } = useLanguageStore();
@@ -33,7 +34,8 @@ export default function Dashboard() {
         fetchProducts(),
         fetchStaff(),
         fetchPayments(),
-        fetchNotifications()
+        fetchNotifications(),
+        fetchVendors()
       ]);
     };
     loadData();
@@ -44,6 +46,7 @@ export default function Dashboard() {
   const pendingOrders = orders.filter(o => o.status === 'Pending');
 
   const totalLena = customers.filter(c => c.balance > 0).reduce((s, c) => s + c.balance, 0);
+  const totalDena = vendors.reduce((s, v) => s + (v.balance || 0), 0);
   const todaySales = transactions
     .filter(t => t.type === 'Liya' && t.createdAt?.includes('26 Apr'))
     .reduce((s, t) => s + t.amount, 0);
@@ -91,7 +94,7 @@ export default function Dashboard() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard
           title={t('totalSales')}
           value={`₹${todaySales.toLocaleString('en-IN')}`}
@@ -101,17 +104,25 @@ export default function Dashboard() {
           topBorder="green"
         />
         <StatCard
-          title={t('totalBalance')}
+          title="Total Receivable"
           value={`₹${totalLena.toLocaleString('en-IN')}`}
-          subtitle={totalLena > 0 ? `${customers.filter(c => c.balance > 0).length} grahak se lena hai` : 'Koi udhaar nahi hai'}
+          subtitle="Grahakon se lena hai"
           icon={<Wallet size={20} />}
           iconBg="bg-orange-100 text-orange-600"
           topBorder="orange"
         />
         <StatCard
+          title="Total Payable"
+          value={`₹${totalDena.toLocaleString('en-IN')}`}
+          subtitle="Vendors ko dena hai"
+          icon={<ArrowRight size={20} />}
+          iconBg="bg-red-100 text-red-600"
+          topBorder="red"
+        />
+        <StatCard
           title={t('activeOrders')}
           value={pendingOrders.length}
-          subtitle={pendingOrders.length > 0 ? "Online store se" : "Naye orders ka intezaar hai"}
+          subtitle="Store orders"
           icon={<ShoppingBag size={20} />}
           iconBg="bg-blue-100 text-blue-600"
           topBorder="blue"
@@ -119,10 +130,10 @@ export default function Dashboard() {
         <StatCard
           title={t('lowStock')}
           value={`${lowStockItems.length} Items`}
-          subtitle={lowStockItems.length > 0 ? "Khatam hone wale hain" : "Stock puraa hai"}
+          subtitle="Stock alerts"
           icon={<Package size={20} />}
-          iconBg="bg-red-100 text-red-600"
-          topBorder="red"
+          iconBg="bg-slate-100 text-slate-600"
+          topBorder="purple"
         />
       </div>
 

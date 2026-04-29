@@ -309,7 +309,12 @@ export default function Subscription() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto">
         {/* STARTER PLAN */}
         <Card className="relative overflow-hidden border-2 border-slate-100 transition-all duration-500 hover:scale-[1.02] bg-white">
-          <div className="absolute top-5 right-5">
+          <div className="absolute top-5 right-5 flex flex-col items-end gap-2">
+            {user?.plan === 'Starter' && (
+              <div className="bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-lg shadow-green-500/20">
+                <CheckCircle2 size={12} /> ACTIVE
+              </div>
+            )}
             <Badge status="info">{PLAN_DATA.starter.badge}</Badge>
           </div>
           <div className="p-8 pb-0">
@@ -348,7 +353,12 @@ export default function Subscription() {
           "border-[#FF6B00] shadow-2xl shadow-[#FF6B00]/10"
         )}>
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#FF6B00]" />
-          <div className="absolute top-5 right-5">
+          <div className="absolute top-5 right-5 flex flex-col items-end gap-2">
+            {user?.plan === 'Pro' && (
+              <div className="bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-lg shadow-green-500/20">
+                <CheckCircle2 size={12} /> ACTIVE
+              </div>
+            )}
             <Badge status="warning">{PLAN_DATA.pro.badge}</Badge>
           </div>
           <div className="p-8 pb-0">
@@ -389,7 +399,12 @@ export default function Subscription() {
           "relative overflow-hidden border-2 transition-all duration-500 hover:scale-[1.02]",
           "border-slate-900 bg-[#0A0B1A] text-white"
         )}>
-          <div className="absolute top-5 right-5">
+          <div className="absolute top-5 right-5 flex flex-col items-end gap-2">
+            {user?.plan === 'Business' && (
+              <div className="bg-green-500 text-white px-3 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-lg shadow-green-500/20">
+                <CheckCircle2 size={12} /> ACTIVE
+              </div>
+            )}
             <Badge status="success">{PLAN_DATA.business.badge}</Badge>
           </div>
           <div className="p-8 pb-0">

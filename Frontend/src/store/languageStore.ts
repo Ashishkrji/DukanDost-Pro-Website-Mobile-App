@@ -39,7 +39,8 @@ export const languages: Record<Language, LanguageConfig> = {
 const translations: Record<Language, any> = {
   en: {
     dashboard: 'Dashboard',
-    khata: 'Khata',
+    khata: 'Digital Khata',
+    vendors: 'Vendor Khata',
     invoices: 'Invoices & Billing',
     inventory: 'Inventory',
     payments: 'Payments & QR',
@@ -61,7 +62,8 @@ const translations: Record<Language, any> = {
   },
   hi: {
     dashboard: 'डैशबोर्ड',
-    khata: 'खाता',
+    khata: 'डिजिटल खाता',
+    vendors: 'वेंडर खाता',
     invoices: 'इनवॉइस और बिलिंग',
     inventory: 'इन्वेंट्री',
     payments: 'भुगतान और QR',
@@ -251,6 +253,7 @@ const translations: Record<Language, any> = {
     createBill: 'ବିଲ୍ ପ୍ରସ୍ତୁତ କରନ୍ତୁ',
     logout: 'ଲଗଆଉଟ୍',
   },
+  as: {}, mai: {}, sat: {}, ks: {}, ne: {}, kok: {}, sd: {}, doi: {}, mni: {}, sa: {}, brx: {},
 };
 
 interface LanguageState {

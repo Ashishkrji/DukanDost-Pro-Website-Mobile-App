@@ -188,11 +188,25 @@ export default function AI() {
   ]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [healthData, setHealthData] = useState<any>(null);
   const [expandedInsight, setExpandedInsight] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const insights = buildInsights(store);
+
+  useEffect(() => {
+    fetchHealth();
+  }, []);
+
+  const fetchHealth = async () => {
+    try {
+      const data = await api.getBusinessHealth();
+      if (data.success) setHealthData(data);
+    } catch (err) {
+      console.error('Health fetch failed');
+    }
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -235,7 +249,7 @@ export default function AI() {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* ── Chat Panel ── */}
         <div className="lg:col-span-3 flex flex-col">
-          <Card className="flex flex-col overflow-hidden" style={{ height: '70vh', minHeight: '500px' }}>
+          <Card className="flex flex-col overflow-hidden" style={{ height: '75vh', minHeight: '600px' }}>
             {/* Header */}
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-900 to-[#1A1A2E]">
               <div className="flex items-center gap-3">
@@ -333,84 +347,179 @@ export default function AI() {
           </Card>
         </div>
 
-        {/* ── Insights Panel ── */}
-        <div className="lg:col-span-2 space-y-3">
-          <h3 className="font-display font-bold text-slate-900 flex items-center gap-2 text-base">
-            <Zap size={18} className="text-orange-500" /> AI Insights
-          </h3>
+        {/* ── AI Intelligence Panels ── */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Business Health Score */}
+          <Card className="p-6 bg-white overflow-hidden relative group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 duration-500 opacity-50" />
+            <div className="relative z-10 text-center">
+              <h3 className="font-display font-bold text-slate-800 text-lg mb-6 flex items-center justify-center gap-2">
+                <Crown size={20} className="text-orange-500" />
+                Business Health Score
+              </h3>
+              
+              <div className="relative w-40 h-40 mx-auto mb-6">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    fill="transparent"
+                    className="text-slate-100"
+                  />
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="70"
+                    stroke="currentColor"
+                    strokeWidth="12"
+                    fill="transparent"
+                    strokeDasharray={440}
+                    strokeDashoffset={440 - (440 * (healthData?.score || 0)) / 100}
+                    strokeLinecap="round"
+                    className="text-orange-500 transition-all duration-1000 ease-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-display font-black text-slate-900 leading-none">
+                    {healthData?.score || '--'}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                    HEALTH INDEX
+                  </span>
+                </div>
+              </div>
 
-          {insights.map((insight, i) => (
-            <Card
-              key={i}
-              className={cn('p-4 bg-gradient-to-br border transition-all cursor-pointer hover:shadow-md', insight.color)}
-              onClick={() => setExpandedInsight(expandedInsight === i ? null : i)}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className={cn('shrink-0 mt-0.5', insight.iconColor)}>{insight.icon}</div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-slate-900 text-sm">{insight.title}</p>
-                    <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">{insight.description}</p>
+              <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-6">
+                <div className="text-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Growth</p>
+                  <p className="text-sm font-bold text-green-600">+{healthData?.metrics?.revenueGrowth}%</p>
+                </div>
+                <div className="text-center border-x border-slate-100">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Recovery</p>
+                  <p className="text-sm font-bold text-blue-600">{healthData?.metrics?.recoveryRate}%</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">Risk</p>
+                  <p className="text-sm font-bold text-orange-600">{healthData?.metrics?.riskRatio}%</p>
+                </div>
+              </div>
+            </div>
+          </Card>
 
-                    {/* Expanded Detail */}
-                    {expandedInsight === i && (
-                      <p className="text-xs text-slate-500 mt-2 p-2 bg-white/50 rounded-lg border border-white/80 leading-relaxed">
-                        💡 {insight.detail}
-                      </p>
-                    )}
+          {/* AI Recommendations */}
+          <div className="space-y-3">
+            <h3 className="font-display font-bold text-slate-900 flex items-center gap-2 text-base px-1">
+              <Zap size={18} className="text-orange-500" /> Smart Recommendations
+            </h3>
 
-                    {/* Action Buttons */}
-                    <div className="flex items-center gap-2 mt-2">
-                      <button
-                        onClick={e => { e.stopPropagation(); navigate(insight.learnMoreRoute); }}
-                        className={cn(
-                          'flex items-center gap-1 text-xs font-bold transition-colors px-2 py-1 rounded-lg',
-                          insight.iconColor,
-                          'hover:bg-white/60'
-                        )}
-                      >
-                        {insight.learnMoreLabel} <ChevronRight size={12} />
-                      </button>
-                      {insight.action && (
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            store.showToast(`${insight.action} initiated!`);
-                          }}
-                          className="text-xs font-bold text-white bg-slate-700/70 px-2.5 py-1 rounded-lg hover:bg-slate-800 transition-colors"
-                        >
-                          {insight.action}
-                        </button>
-                      )}
-                    </div>
+            {healthData?.recommendations?.map((rec: string, i: number) => (
+              <Card key={i} className="p-4 bg-gradient-to-br from-orange-50 to-amber-50 border-orange-100/50 hover:shadow-md transition-all">
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 shrink-0">
+                    <Lightbulb size={16} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-800 leading-relaxed">
+                      {rec}
+                    </p>
                   </div>
                 </div>
-                <Badge status={insight.badgeColor} className="text-[10px] shrink-0">{insight.badge}</Badge>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))}
 
-          {/* Stats summary */}
-          <Card className="p-4 bg-gradient-to-br from-[#1A1A2E] to-[#252550] text-white">
-            <h4 className="font-display font-bold text-sm mb-3 flex items-center gap-2">
-              <BarChart2 size={16} /> Business Snapshot
-            </h4>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: 'Total Revenue', value: `₹${store.transactions.filter(t => t.type === 'Liya').reduce((s, t) => s + t.amount, 0).toLocaleString('en-IN')}`, icon: '📈' },
-                { label: 'Transactions', value: store.transactions.length, icon: '💹' },
-                { label: 'Pending Udhaar', value: `₹${store.customers.filter(c => c.balance > 0).reduce((s, c) => s + c.balance, 0).toLocaleString('en-IN')}`, icon: '⚠️' },
-                { label: 'Total Customers', value: store.customers.length, icon: '👥' },
-              ].map(stat => (
-                <div key={stat.label} className="bg-white/10 rounded-xl p-2.5">
-                  <p className="text-[10px] text-white/50 uppercase font-semibold">{stat.icon} {stat.label}</p>
-                  <p className="font-mono font-bold text-sm text-white mt-0.5">{stat.value}</p>
+            {!healthData && (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-20 bg-slate-100 animate-pulse rounded-2xl" />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Financing & Credit Score */}
+          <Card className="p-6 bg-gradient-to-br from-slate-900 to-[#1A1A2E] text-white overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-8 -mt-8" />
+            <div className="relative z-10">
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="font-display font-bold text-base flex items-center gap-2">
+                    <Target size={18} className="text-orange-400" />
+                    Credit Eligibility
+                  </h3>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest mt-0.5">Financing Layer</p>
                 </div>
-              ))}
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-display font-black text-lg text-orange-400 border border-white/10">
+                  {healthData?.loanEligibility?.creditGrade || 'C'}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-xs mb-1.5">
+                    <span className="text-slate-400">Loan Eligibility</span>
+                    <span className={cn('font-bold', healthData?.loanEligibility?.isEligible ? 'text-green-400' : 'text-red-400')}>
+                      {healthData?.loanEligibility?.isEligible ? 'ELIGIBLE' : 'NOT ELIGIBLE'}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-orange-500 transition-all duration-1000" 
+                      style={{ width: `${(healthData?.score || 0)}%` }} 
+                    />
+                  </div>
+                </div>
+
+                {healthData?.loanEligibility?.isEligible && (
+                  <div className="bg-white/5 rounded-xl p-3 border border-white/10">
+                    <p className="text-[10px] text-slate-400 uppercase font-bold">Max Limit Available</p>
+                    <p className="text-xl font-display font-bold text-white mt-0.5">
+                      ₹{healthData?.loanEligibility?.maxAmount?.toLocaleString('en-IN')}
+                    </p>
+                    <button className="w-full mt-3 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-lg transition-colors">
+                      Apply for Capital
+                    </button>
+                  </div>
+                )}
+
+                {!healthData?.loanEligibility?.isEligible && (
+                  <p className="text-[11px] text-slate-500 italic leading-relaxed">
+                    Higher health score (>70) aur consistent revenue hone par aap loan ke liye eligible ho jayenge.
+                  </p>
+                )}
+              </div>
+            </div>
+          </Card>
+
+          {/* AI Capability Snapshot */}
+          <Card className="p-4 bg-slate-900 text-white relative overflow-hidden">
+            <div className="absolute bottom-0 right-0 p-4 opacity-10">
+              <Zap size={80} />
+            </div>
+            <h4 className="font-display font-bold text-sm mb-3 flex items-center gap-2 relative z-10">
+              <Sparkles size={16} className="text-orange-400" /> AI Capabilities
+            </h4>
+            <div className="space-y-2 relative z-10">
+              <div className="flex items-center gap-2 text-xs text-slate-300">
+                <div className="w-1 h-1 bg-orange-400 rounded-full" />
+                Real-time Risk Analysis
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-300">
+                <div className="w-1 h-1 bg-orange-400 rounded-full" />
+                Predictive Cashflow Modeling
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-300">
+                <div className="w-1 h-1 bg-orange-400 rounded-full" />
+                Inventory Demand Forecasting
+              </div>
             </div>
           </Card>
         </div>
       </div>
     </div>
+  );
+}
   );
 }

@@ -13,10 +13,19 @@ import settingsRoutes from './settingsRoutes.ts';
 import notificationRoutes from './notificationRoutes.ts';
 import reminderRoutes from './reminderRoutes.ts';
 import landingRoutes from './landingRoutes.ts';
+import ledgerRoutes from './ledgerRoutes.ts';
+import vendorRoutes from './vendorRoutes.ts';
+import inventoryRoutes from './inventoryRoutes.ts';
+import analyticsRoutes from './analyticsRoutes.ts';
+import shopRoutes from './shopRoutes.ts';
+import whatsappRoutes from './whatsappRoutes.ts';
+import campaignRoutes from './campaignRoutes.ts';
+import aiRoutes from './aiRoutes.ts';
 
 const router = express.Router();
 
 router.use('/customers', customerRoutes);
+router.use('/ledger', ledgerRoutes);
 router.use('/transactions', transactionRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/products', productRoutes);
@@ -30,5 +39,12 @@ router.use('/settings', settingsRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/reminders', reminderRoutes);
 router.use('/landing', landingRoutes);
+router.use('/vendors', vendorRoutes);
+router.use('/inventory', inventoryRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/shops', shopRoutes);
+router.use('/whatsapp', whatsappRoutes);
+router.use('/campaigns', campaignRoutes);
+router.use('/ai-insights', aiRoutes);
 
 export default router;

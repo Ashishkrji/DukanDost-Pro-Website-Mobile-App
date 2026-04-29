@@ -11,6 +11,8 @@ const itemSchema = new mongoose.Schema({
 }, { _id: false });
 
 const invoiceSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop' },
   invoiceNumber: { type: String, unique: true },
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -35,6 +37,12 @@ const invoiceSchema = new mongoose.Schema({
   notes: { type: String },
   isGST: { type: Boolean, default: false },
 }, { timestamps: true });
+
+invoiceSchema.index({ userId: 1 });
+invoiceSchema.index({ customerId: 1 });
+invoiceSchema.index({ shopId: 1 });
+invoiceSchema.index({ invoiceNumber: 1 });
+invoiceSchema.index({ createdAt: -1 });
 
 // Auto-generate invoice number
 invoiceSchema.pre('save', async function (next) {

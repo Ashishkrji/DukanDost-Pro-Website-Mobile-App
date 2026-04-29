@@ -81,6 +81,10 @@ export const updateInvoice = (id: string, data: any) =>
 export const deleteInvoice = (id: string) =>
   api.delete(`/invoices/${id}`).then(r => r.data);
 
+export const shareInvoice = (id: string) =>
+  api.get(`/invoices/${id}/share`).then(r => r.data);
+
+
 // ── Products ────────────────────────────────────────────────
 export const getProducts = (params?: { category?: string; status?: string; search?: string }) =>
   api.get('/products', { params }).then(r => r.data);
@@ -157,5 +161,75 @@ export const getNotifications = () =>
 
 export const markNotificationAsRead = (id: string) =>
   api.patch(`/notifications/${id}/read`).then(r => r.data);
+
+// ── Digital Khata / Ledger ──────────────────────────────────
+export const getKhataCustomers = (params?: { search?: string; status?: string }) =>
+  api.get('/customers/all', { params }).then(r => r.data);
+
+export const createKhataCustomer = (data: any) =>
+  api.post('/customers/create', data).then(r => r.data);
+
+export const getLedgerEntries = (params: { customerId?: string; vendorId?: string }) =>
+  api.get('/ledger/history', { params }).then(r => r.data);
+
+export const createLedgerEntry = (data: any) =>
+  api.post('/ledger/create', data).then(r => r.data);
+
+// ── Vendors ──────────────────────────────────────────────────
+export const getVendors = () =>
+  api.get('/vendors/all').then(r => r.data);
+
+export const createVendor = (data: any) =>
+  api.post('/vendors/create', data).then(r => r.data);
+
+export const updateVendor = (id: string, data: any) =>
+  api.put(`/vendors/update/${id}`, data).then(r => r.data);
+
+export const deleteVendor = (id: string) =>
+  api.delete(`/vendors/delete/${id}`).then(r => r.data);
+
+// ── Inventory ────────────────────────────────────────────────
+export const getInventoryHistory = (productId: string) =>
+  api.get(`/inventory/history/${productId}`).then(r => r.data);
+
+export const createInventoryEntry = (data: { 
+  productId: string; 
+  type: 'PURCHASE' | 'SALE' | 'ADJUSTMENT' | 'RETURN'; 
+  quantity: number; 
+  price?: number; 
+  vendorId?: string; 
+  notes?: string;
+}) => api.post('/inventory/entry', data).then(r => r.data);
+
+// ── Analytics ────────────────────────────────────────────────
+export const getPLStats = (shopId?: string) => 
+  api.get('/analytics/pl', { params: { shopId } }).then(r => r.data);
+export const getRecoveryStats = (shopId?: string) => 
+  api.get('/analytics/recovery', { params: { shopId } }).then(r => r.data);
+export const getProfitabilityStats = (shopId?: string) => 
+  api.get('/analytics/profitability', { params: { shopId } }).then(r => r.data);
+
+// ── Shops ────────────────────────────────────────────────────
+export const getShops = () =>
+  api.get('/shops').then(r => r.data);
+
+export const createShop = (data: any) =>
+  api.post('/shops', data).then(r => r.data);
+
+// ── WhatsApp ─────────────────────────────────────────────────
+export const sendWhatsAppReminder = (customerId: string) =>
+  api.post('/whatsapp/remind', { customerId }).then(r => r.data);
+
+// ── Campaigns ────────────────────────────────────────────────
+export const getCampaigns = () => 
+  api.get('/campaigns').then(r => r.data);
+export const createCampaign = (data: any) => 
+  api.post('/campaigns', data).then(r => r.data);
+export const sendCampaign = (id: string) => 
+  api.post(`/campaigns/${id}/send`).then(r => r.data);
+
+// ── AI Insights ──────────────────────────────────────────────
+export const getBusinessHealth = () => 
+  api.get('/ai-insights/health-score').then(r => r.data);
 
 export default api;

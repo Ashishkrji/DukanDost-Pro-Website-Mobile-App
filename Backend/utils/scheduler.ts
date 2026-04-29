@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import Reminder from '../models/Reminder.js';
 import User from '../models/User.js';
+import whatsappService from '../services/whatsappService.ts';
 
 /**
  * Automator for WhatsApp Reminders
@@ -41,6 +42,36 @@ export const initReminderScheduler = () => {
       console.error('❌ Scheduler Error:', error);
     }
   });
+
+  // Daily Overdue Reminders (Runs at 11:00 AM)
+  cron.schedule('0 11 * * *', async () => {
+    console.log('📢 Running daily overdue payment reminders...');
+    try {
+      const businessUsers = await User.find({ plan: 'Business' });
+      const businessUserIds = businessUsers.map(u => u._id);
+
+      const Customer = (await import('../models/Customer.ts')).default;
+      const customersToRemind = await Customer.find({
+        userId: { $in: businessUserIds },
+        balance: { $gt: 2000 },
+        status: 'Overdue',
+        isActive: true
+      });
+
+      console.log(`[Cron] Found ${customersToRemind.length} overdue customers.`);
+
+      for (const customer of customersToRemind) {
+        await whatsappService.sendPaymentReminder(
+          customer.phone,
+          customer.name,
+          customer.balance,
+          new Date().toLocaleDateString()
+        );
+      }
+    } catch (error) {
+      console.error('❌ Daily Reminder Cron Error:', error);
+    }
+  });
 };
 
 const triggerReminderSend = async (reminder: any) => {
@@ -57,8 +88,8 @@ const triggerReminderSend = async (reminder: any) => {
 
     console.log(`[AUTO-REACH] Sending WhatsApp to ${reminder.mobileNumber} for ${user.businessName}`);
     
-    // In future, call actual WhatsApp Business API here
-    // const response = await whatsappService.sendText(reminder.mobileNumber, message);
+    // Call actual WhatsApp Business API
+    await whatsappService.sendTextMessage(reminder.mobileNumber, message);
 
     // Update reminder status
     reminder.lastSentDate = new Date();

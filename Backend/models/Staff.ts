@@ -21,9 +21,16 @@ const salaryPaymentSchema = new mongoose.Schema({
 }, { _id: false });
 
 const staffSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
   name: { type: String, required: true, trim: true },
   phone: { type: String },
-  role: { type: String, required: true },
+  email: { type: String, lowercase: true, trim: true },
+  hasAppAccess: { type: Boolean, default: false },
+  role: { type: String, required: true, enum: ['staff', 'manager', 'admin'], default: 'staff' },
   salary: { type: Number, required: true, min: 0 },
   attendance: [attendanceSchema],
   salaryHistory: [salaryPaymentSchema],

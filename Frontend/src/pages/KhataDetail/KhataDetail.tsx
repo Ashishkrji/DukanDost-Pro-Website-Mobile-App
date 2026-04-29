@@ -7,7 +7,8 @@ import {
 import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
 import { Button, Card, Badge, Modal, InputField, SelectField, Skeleton } from '@/components/ui';
-import { getCustomerCreditScore, addTransactionNote } from '@/services/api';
+import { getCustomerCreditScore, addTransactionNote, sendWhatsAppReminder } from '@/services/api';
+import { useAuthStore } from '@/store/authStore';
 
 // ── Credit Score Badge ─────────────────────────────────────
 function CreditBadge({ score, risk }: { score: number; risk: string }) {
@@ -99,6 +100,8 @@ export default function KhataDetail() {
   const [txNote, setTxNote] = useState('');
   const [txMode, setTxMode] = useState('CASH');
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+  const { user: authUser } = useAuthStore();
 
   // Load credit score
   useEffect(() => {
@@ -196,8 +199,27 @@ export default function KhataDetail() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="whatsapp" size="sm" icon={<MessageCircle size={15} />}
-            onClick={() => showToast(`Reminder sent to ${customer.name}!`)}>
+          <Button 
+            variant="whatsapp" 
+            size="sm" 
+            icon={<MessageCircle size={15} />}
+            loading={sendingWhatsApp}
+            onClick={async () => {
+              if (authUser?.plan !== 'Business') {
+                useStore.getState().openUpgradePopup('Business', 'WhatsApp Automation');
+                return;
+              }
+              setSendingWhatsApp(true);
+              try {
+                const res = await sendWhatsAppReminder(customer.id || customer._id || '');
+                if (res.success) showToast('WhatsApp reminder sent!', 'success');
+              } catch (err) {
+                showToast('Failed to send WhatsApp', 'error');
+              } finally {
+                setSendingWhatsApp(false);
+              }
+            }}
+          >
             WhatsApp
           </Button>
           <Button icon={<PlusCircle size={15} />} onClick={() => setShowAddTxModal(true)}>

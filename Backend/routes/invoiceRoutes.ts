@@ -6,11 +6,11 @@ import { checkFeatureAccess } from '../middleware/planMiddleware';
 const router = express.Router();
 
 // GET all invoices
-// GET all invoices
-router.get('/', async (req, res) => {
+router.get('/', async (req: any, res) => {
   try {
+    const ownerId = req.ownerId;
     const { status, customerId, search } = req.query;
-    const query: any = {};
+    const query: any = { userId: ownerId };
     if (status && status !== 'All') query.status = status;
     if (customerId) query.customerId = customerId;
     if (search) {
@@ -29,9 +29,10 @@ router.get('/', async (req, res) => {
 });
 
 // GET single invoice
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req: any, res) => {
   try {
-    const invoice = await Invoice.findById(req.params.id).populate('customerId');
+    const ownerId = req.ownerId;
+    const invoice = await Invoice.findOne({ _id: req.params.id, userId: ownerId }).populate('customerId');
     if (!invoice) return res.status(404).json({ message: 'Not found' });
     res.json(invoice);
   } catch (error) {
@@ -40,13 +41,14 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST create invoice
-router.post('/', async (req, res) => {
+router.post('/', async (req: any, res) => {
   try {
+    const ownerId = req.ownerId;
     const { customerId, items, discount = 0, dueDate, notes, isGST } = req.body;
 
     // Plan check for GST
     if (isGST) {
-      const userPlan = (req as any).user?.plan || 'Starter';
+      const userPlan = req.user?.plan || 'Starter';
       if (userPlan === 'Starter') {
         return res.status(403).json({
           success: false,
@@ -56,26 +58,27 @@ router.post('/', async (req, res) => {
       }
     }
 
-    const customer = await Customer.findById(customerId);
+    const customer = await Customer.findOne({ _id: customerId, userId: ownerId });
 
     // Calculate totals
     let subtotal = 0;
     let totalGST = 0;
     const processedItems = (items || []).map((item: any) => {
-      const lineTotal = item.qty * item.price;
-      const gstAmount = (lineTotal * (item.gstRate || 0)) / 100;
+      const lineTotal = Number(item.qty) * Number(item.price);
+      const gstAmount = (lineTotal * (Number(item.gstRate) || 0)) / 100;
       subtotal += lineTotal;
       totalGST += gstAmount;
       return { ...item, gstAmount, total: lineTotal + gstAmount };
     });
 
-    const total = subtotal + totalGST - discount;
+    const total = subtotal + totalGST - Number(discount);
 
     const invoice = new Invoice({
+      userId: ownerId,
       customerId,
       customerName: customer?.name || req.body.customerName,
       customerPhone: customer?.phone || req.body.customerPhone,
-      customerGSTIN: customer?.gstin,
+      customerGSTIN: customer?.gstNumber,
       items: processedItems,
       subtotal,
       totalGST,
@@ -103,21 +106,22 @@ router.post('/', async (req, res) => {
 });
 
 // PUT update invoice status (mark paid, overdue, etc.)
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req: any, res) => {
   try {
+    const ownerId = req.ownerId;
     const { status } = req.body;
     const updateData: any = { ...req.body };
     if (status === 'PAID') {
       updateData.paidDate = new Date();
       // Update customer balance
-      const invoice = await Invoice.findById(req.params.id);
+      const invoice = await Invoice.findOne({ _id: req.params.id, userId: ownerId });
       if (invoice && invoice.status !== 'PAID') {
-        await Customer.findByIdAndUpdate(invoice.customerId, {
+        await Customer.findOneAndUpdate({ _id: invoice.customerId, userId: ownerId }, {
           $inc: { balance: -invoice.total },
         });
       }
     }
-    const updated = await Invoice.findByIdAndUpdate(req.params.id, updateData, {
+    const updated = await Invoice.findOneAndUpdate({ _id: req.params.id, userId: ownerId }, updateData, {
       new: true, runValidators: true,
     });
     if (!updated) return res.status(404).json({ message: 'Not found' });
@@ -128,9 +132,10 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE invoice
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: any, res) => {
   try {
-    const deleted = await Invoice.findByIdAndDelete(req.params.id);
+    const ownerId = req.ownerId;
+    const deleted = await Invoice.findOneAndDelete({ _id: req.params.id, userId: ownerId });
     if (!deleted) return res.status(404).json({ message: 'Not found' });
     res.json({ message: 'Invoice deleted' });
   } catch (error) {
@@ -138,4 +143,29 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// GET sharing link/text
+router.get('/:id/share', async (req: any, res) => {
+  try {
+    const ownerId = req.ownerId;
+    const invoice = await Invoice.findOne({ _id: req.params.id, userId: ownerId }).populate('customerId');
+    if (!invoice) return res.status(404).json({ message: 'Not found' });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const shareUrl = `${frontendUrl}/view-invoice/${invoice._id}`;
+    
+    const message = `Hello ${invoice.customerName}, your invoice ${invoice.invoiceNumber} from DukanDost is ready. Total: ₹${invoice.total}. View it here: ${shareUrl}`;
+    const whatsappUrl = `https://wa.me/${invoice.customerPhone?.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+
+    res.json({
+      success: true,
+      message,
+      shareUrl,
+      whatsappUrl
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server Error', error });
+  }
+});
+
 export default router;
+

@@ -1,7 +1,11 @@
 import express from 'express';
 import Product from '../models/Product.ts';
+import { upload } from '../config/cloudinary.ts';
+import { protect } from '../middleware/authMiddleware.ts';
+import { logAction } from '../utils/auditLogger.ts';
 
 const router = express.Router();
+router.use(protect);
 
 // GET all products
 router.get('/', async (req, res) => {
@@ -56,9 +60,16 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST create product
-router.post('/', async (req, res) => {
+router.post('/', upload.single('image'), async (req: any, res) => {
   try {
-    const product = new Product(req.body);
+    const productData = { ...req.body };
+    if (req.file) {
+      productData.image = req.file.path; // Cloudinary URL
+    }
+    
+    const product = new Product(productData);
+    product.userId = req.ownerId; // Ensure ownership
+    
     const saved = await product.save();
     res.status(201).json(saved);
   } catch (error: any) {
@@ -69,12 +80,19 @@ router.post('/', async (req, res) => {
   }
 });
 
-// PUT update product (also handles stock adjustment)
-router.put('/:id', async (req, res) => {
+// PUT update product
+router.put('/:id', upload.single('image'), async (req: any, res) => {
   try {
-    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true, runValidators: true,
-    });
+    const updateData = { ...req.body };
+    if (req.file) {
+      updateData.image = req.file.path;
+    }
+    
+    const updated = await Product.findOneAndUpdate(
+      { _id: req.params.id, userId: req.ownerId },
+      updateData,
+      { new: true, runValidators: true }
+    );
     if (!updated) return res.status(404).json({ message: 'Not found' });
     res.json(updated);
   } catch (error) {
@@ -114,10 +132,21 @@ router.post('/bulk', async (req, res) => {
 });
 
 // DELETE product
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: any, res) => {
   try {
-    const deleted = await Product.findByIdAndDelete(req.params.id);
+    const deleted = await Product.findOneAndDelete({ _id: req.params.id, userId: req.ownerId });
     if (!deleted) return res.status(404).json({ message: 'Not found' });
+    
+    await logAction({
+      userId: req.ownerId,
+      performedBy: req.user.id,
+      action: 'DELETE_PRODUCT',
+      entity: 'Product',
+      entityId: deleted._id,
+      changes: { oldValue: deleted, newValue: null },
+      req
+    });
+
     res.json({ message: 'Product deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error });

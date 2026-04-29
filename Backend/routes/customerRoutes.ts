@@ -1,15 +1,19 @@
 import express from 'express';
 import Customer from '../models/Customer.ts';
-import Transaction from '../models/Transaction.ts';
-import { calculateCreditScore } from '../utils/creditScore.ts';
+import LedgerEntry from '../models/LedgerEntry.ts';
+import { protect } from '../middleware/authMiddleware.ts';
 
 const router = express.Router();
 
-// GET all customers (with optional search)
-router.get('/', async (req, res) => {
+router.use(protect);
+
+// GET /api/customers/all
+router.get('/all', async (req: any, res) => {
   try {
     const { search, status } = req.query;
-    const query: any = { isActive: { $ne: false } };
+    const ownerId = req.ownerId;
+    
+    const query: any = { userId: ownerId, isActive: { $ne: false } };
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -17,103 +21,117 @@ router.get('/', async (req, res) => {
       ];
     }
     if (status && status !== 'All') query.status = status;
+    
     const customers = await Customer.find(query).sort({ createdAt: -1 });
-    res.json(customers);
+    res.json({ success: true, customers });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error });
+    res.status(500).json({ success: false, message: 'Server Error', error });
   }
 });
 
-// GET single customer
-router.get('/:id', async (req, res) => {
+// GET /api/customers/:id
+router.get('/:id', async (req: any, res) => {
   try {
-    const customer = await Customer.findById(req.params.id);
-    if (!customer) return res.status(404).json({ message: 'Customer not found' });
-    res.json(customer);
+    const ownerId = req.ownerId;
+    const customer = await Customer.findOne({ _id: req.params.id, userId: ownerId });
+    if (!customer) return res.status(404).json({ success: false, message: 'Customer not found' });
+    res.json({ success: true, customer });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error });
+    res.status(500).json({ success: false, message: 'Server Error', error });
   }
 });
 
-// GET credit score
-router.get('/:id/credit-score', async (req, res) => {
+// POST /api/customers/create
+router.post('/create', async (req: any, res) => {
   try {
-    const customer = await Customer.findById(req.params.id);
-    if (!customer) return res.status(404).json({ message: 'Customer not found' });
-    const txns = await Transaction.find({ customerId: customer._id, isDeleted: { $ne: true } });
-    const result = calculateCreditScore(customer, txns);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error', error });
-  }
-});
+    const ownerId = req.ownerId;
+    const { 
+      name, phone, alternateNumber, address, shopName, 
+      gstNumber, notes, initialEntry 
+    } = req.body;
 
-// GET customer transactions
-router.get('/:id/transactions', async (req, res) => {
-  try {
-    const txns = await Transaction.find({
-      customerId: req.params.id,
-      isDeleted: { $ne: true },
-    }).sort({ date: -1 });
-    res.json(txns);
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error', error });
-  }
-});
+    const customer = new Customer({
+      userId: ownerId,
+      name,
+      phone,
+      alternateNumber,
+      address,
+      shopName,
+      gstNumber,
+      notes,
+    });
 
-// POST create customer
-router.post('/', async (req, res) => {
-  try {
-    const customer = new Customer(req.body);
+    if (initialEntry && initialEntry.amount > 0) {
+      const { transactionType, amount, description } = initialEntry;
+      
+      if (transactionType === 'Udhaar Diya') {
+        customer.totalCredit = Number(amount);
+        customer.remainingBalance = Number(amount);
+        customer.balance = Number(amount);
+        customer.status = 'Udhaar';
+      } else {
+        customer.totalReceived = Number(amount);
+        customer.remainingBalance = -Number(amount);
+        customer.balance = -Number(amount);
+        customer.status = 'Up-to-date';
+      }
+      
+      customer.lastTransactionDate = new Date();
+      const savedCustomer = await customer.save();
+
+      // Create ledger entry
+      await LedgerEntry.create({
+        customerId: savedCustomer._id,
+        userId: ownerId,
+        transactionType,
+        amount,
+        notes: description || 'Initial Khata Entry',
+        balanceAfterEntry: customer.remainingBalance,
+        date: new Date()
+      });
+
+      return res.status(201).json({ success: true, customer: savedCustomer });
+    }
+
     const saved = await customer.save();
-    res.status(201).json(saved);
+    res.status(201).json({ success: true, customer: saved });
   } catch (error: any) {
     if (error.code === 11000) {
-      return res.status(409).json({ message: 'Phone number already exists' });
+      return res.status(409).json({ success: false, message: 'Phone number already exists for this user' });
     }
-    res.status(400).json({ message: 'Bad Request', error: error.message });
+    res.status(400).json({ success: false, message: error.message });
   }
 });
 
-// PUT update customer
-router.put('/:id', async (req, res) => {
+// PUT /api/customers/update/:id
+router.put('/update/:id', async (req: any, res) => {
   try {
-    const updated = await Customer.findByIdAndUpdate(req.params.id, req.body, {
-      new: true, runValidators: true,
-    });
-    if (!updated) return res.status(404).json({ message: 'Customer not found' });
-    res.json(updated);
+    const ownerId = req.ownerId;
+    const updated = await Customer.findOneAndUpdate(
+      { _id: req.params.id, userId: ownerId }, 
+      req.body, 
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(404).json({ success: false, message: 'Customer not found' });
+    res.json({ success: true, customer: updated });
   } catch (error) {
-    res.status(400).json({ message: 'Bad Request', error });
+    res.status(400).json({ success: false, message: 'Bad Request', error });
   }
 });
 
-// DELETE customer (soft delete)
-router.delete('/:id', async (req, res) => {
+// DELETE /api/customers/delete/:id
+router.delete('/delete/:id', async (req: any, res) => {
   try {
-    const updated = await Customer.findByIdAndUpdate(
-      req.params.id,
+    const ownerId = req.ownerId;
+    const updated = await Customer.findOneAndUpdate(
+      { _id: req.params.id, userId: ownerId },
       { isActive: false },
       { new: true }
     );
-    if (!updated) return res.status(404).json({ message: 'Not found' });
-    res.json({ message: 'Customer deleted' });
+    if (!updated) return res.status(404).json({ success: false, message: 'Not found' });
+    res.json({ success: true, message: 'Customer deleted' });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error });
-  }
-});
-
-// POST bulk WhatsApp reminders (simulated)
-router.post('/bulk/remind', async (req, res) => {
-  try {
-    const { customerIds } = req.body;
-    // In production: integrate with WhatsApp Business API
-    res.json({
-      message: `Reminders sent to ${customerIds?.length || 0} customers`,
-      sent: customerIds,
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server Error', error });
+    res.status(500).json({ success: false, message: 'Server Error', error });
   }
 });
 

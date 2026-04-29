@@ -3,8 +3,8 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.ts';
 
 const signToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'secret_key_123', {
-    expiresIn: process.env.JWT_EXPIRE || '30d',
+  return (jwt as any).sign({ id }, process.env.JWT_SECRET || 'secret_key_123', {
+    expiresIn: (process.env.JWT_EXPIRE || '30d') as jwt.SignOptions['expiresIn'],
   });
 };
 
@@ -35,7 +35,7 @@ const createSendToken = (user: any, statusCode: number, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const { fullName, email, password, businessName } = req.body;
+    const { fullName, email, password, businessName, phone } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -47,6 +47,7 @@ export const register = async (req: Request, res: Response) => {
       email,
       password,
       businessName,
+      phone,
     });
 
     createSendToken(newUser, 201, res);
@@ -91,6 +92,28 @@ export const getProfile = async (req: any, res: Response) => {
       user,
     },
   });
+};
+
+export const updateProfile = async (req: any, res: Response) => {
+  try {
+    const { fullName, email, businessName, phone, address, upiId, GSTIN } = req.body;
+    
+    // Find user and update
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { fullName, email, businessName, phone, address, upiId, GSTIN },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        user,
+      },
+    });
+  } catch (err: any) {
+    res.status(400).json({ status: 'error', message: err.message });
+  }
 };
 
 export const forgotPassword = async (req: Request, res: Response) => {

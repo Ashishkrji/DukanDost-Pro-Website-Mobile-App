@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import * as api from '../services/api';
 import {
   mockCustomers,
@@ -44,6 +45,20 @@ export interface Customer {
   color: string;
   status: 'Udhaar' | 'Up-to-date' | 'Overdue';
   lastTransactionDate: string;
+  isActive?: boolean;
+}
+
+export interface Vendor {
+  id?: string;
+  _id?: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  gstNumber?: string;
+  totalPurchased: number;
+  totalPaid: number;
+  balance: number;
   isActive?: boolean;
 }
 
@@ -180,6 +195,14 @@ interface AppState {
   communityPosts: CommunityPost[];
   orders: Order[];
   notifications: Notification[];
+  vendors: Vendor[];
+  shops: any[];
+  currentShopId: string | null;
+  analytics: {
+    pl: any;
+    recovery: any;
+    profitability: any[];
+  };
 
   // UI State
   sidebarOpen: boolean;
@@ -207,6 +230,8 @@ interface AppState {
   fetchStaff: () => Promise<void>;
   fetchPayments: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
+  fetchVendors: () => Promise<void>;
+  fetchInventoryHistory: (productId: string) => Promise<any[]>;
 
   // Mutation Actions
   addTransaction: (tx: Partial<Transaction>) => Promise<void>;
@@ -215,9 +240,11 @@ interface AppState {
   updateProductStock: (id: string, newStock: number) => Promise<void>;
   addProduct: (product: Partial<Product>) => Promise<void>;
   updateStaffAttendance: (id: string, attendance: Staff['attendance']) => Promise<void>;
-  addInvoice: (invoice: Partial<Invoice>) => Promise<void>;
+  addInvoice: (invoice: any) => Promise<void>;
   updateInvoiceStatus: (id: string, status: Invoice['status']) => Promise<void>;
+  shareInvoice: (id: string) => Promise<any>;
   addVoucher: (voucher: Partial<Voucher>) => Promise<void>;
+
   toggleVoucherStatus: (id: string) => Promise<void>;
   likePost: (postId: string) => void;
   addOrder: (order: Partial<Order>) => void;
@@ -225,13 +252,27 @@ interface AppState {
   updateUser: (data: Partial<User>) => void;
   openUpgradePopup: (plan: 'Pro' | 'Business', feature?: string) => void;
   closeUpgradePopup: () => void;
+
+  // Vendor Actions
+  addVendor: (vendor: Partial<Vendor>) => Promise<void>;
+  updateVendor: (id: string, data: Partial<Vendor>) => Promise<void>;
+  
+  // Inventory Action
+  addInventoryEntry: (data: any) => Promise<void>;
+
+  // Analytics & Multi-Shop
+  fetchAnalytics: () => Promise<void>;
+  fetchShops: () => Promise<void>;
+  setCurrentShop: (shopId: string | null) => void;
 }
 
 // ===========================
 // Store Implementation
 // ===========================
 
-export const useStore = create<AppState>((set, get) => ({
+export const useStore = create<AppState>()(
+  persist(
+    (set, get) => ({
   user: {
     id: '',
     name: '',
@@ -255,6 +296,15 @@ export const useStore = create<AppState>((set, get) => ({
   communityPosts: [],
   orders: [],
   notifications: [],
+  vendors: [],
+  shops: [],
+  currentShopId: null,
+  analytics: {
+    pl: { totalSales: 0, totalPurchases: 0, totalExpenses: 0, netProfit: 0, cashIn: 0, cashOut: 0 },
+    recovery: { totalOutstanding: 0, customerCount: 0, aging: { '0-15 days': 0, '16-30 days': 0, '31-60 days': 0, '60+ days': 0 } },
+    profitability: []
+  },
+
 
   // UI State
   sidebarOpen: false,
@@ -448,6 +498,18 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
+  addStaff: async (staffData) => {
+    try {
+      const newStaff = await api.createStaff(staffData);
+      set((state) => ({ staff: [newStaff, ...state.staff] }));
+      get().showToast('Staff added!');
+    } catch (error: any) {
+      const msg = error.response?.data?.message || error.message;
+      get().showToast(`Failed to add staff: ${msg}`, 'error');
+    }
+  },
+
+
   // Invoices
   addInvoice: async (invoice) => {
     try {
@@ -470,6 +532,17 @@ export const useStore = create<AppState>((set, get) => ({
       get().showToast(`Failed to update invoice: ${(error as any).message}`, 'error');
     }
   },
+
+  shareInvoice: async (id: string) => {
+    try {
+      const data = await api.shareInvoice(id);
+      return data;
+    } catch (error) {
+      get().showToast('Failed to generate share link', 'error');
+      return null;
+    }
+  },
+
 
   // Vouchers
   addVoucher: async (voucher) => {
@@ -541,4 +614,121 @@ export const useStore = create<AppState>((set, get) => ({
   }),
 
   closeUpgradePopup: () => set({ upgradePopupOpen: false }),
-}));
+
+  // Vendors
+  fetchVendors: async () => {
+    try {
+      const data = await api.getVendors();
+      if (data.success) set({ vendors: data.vendors });
+    } catch (err) {
+      console.error('Failed to fetch vendors');
+    }
+  },
+
+  addVendor: async (vendor) => {
+    try {
+      const data = await api.createVendor(vendor);
+      if (data.success) {
+        set((state) => ({ vendors: [data.vendor, ...state.vendors] }));
+        get().showToast('New vendor added!');
+      }
+    } catch (error) {
+      get().showToast(`Failed to add vendor: ${(error as any).message}`, 'error');
+    }
+  },
+
+  updateVendor: async (id, data) => {
+    try {
+      const res = await api.updateVendor(id, data);
+      if (res.success) {
+        set((state) => ({
+          vendors: state.vendors.map((v) => (v.id === id || v._id === id) ? res.vendor : v)
+        }));
+      }
+    } catch (error) {
+      get().showToast(`Failed to update vendor: ${(error as any).message}`, 'error');
+    }
+  },
+
+  // Inventory
+  fetchInventoryHistory: async (productId) => {
+    try {
+      const data = await api.getInventoryHistory(productId);
+      return data.success ? data.history : [];
+    } catch (err) {
+      console.error('Failed to fetch inventory history');
+      return [];
+    }
+  },
+
+  addInventoryEntry: async (entryData) => {
+    try {
+      const data = await api.createInventoryEntry(entryData);
+      if (data.success) {
+        // Update product stock in state
+        set((state) => ({
+          products: state.products.map((p) => 
+            (p.id === entryData.productId || (p as any)._id === entryData.productId) 
+            ? { ...p, stock: data.currentStock } 
+            : p
+          )
+        }));
+        get().showToast('Inventory updated!');
+      }
+    } catch (error) {
+      get().showToast(`Failed to add inventory entry: ${(error as any).message}`, 'error');
+    }
+  },
+
+  // Phase 2 — Multi-Shop & Analytics
+  fetchShops: async () => {
+    try {
+      const data = await api.getShops();
+      if (data.success) set({ shops: data.shops });
+    } catch (err) {
+      console.error('Failed to fetch shops');
+    }
+  },
+
+  setCurrentShop: (shopId) => {
+    set({ currentShopId: shopId });
+    get().showToast(`Shop switched!`);
+    // Re-fetch all data for this shop?
+    // get().fetchProducts();
+    // get().fetchTransactions();
+  },
+
+  fetchAnalytics: async () => {
+    try {
+      const shopId = get().currentShopId;
+      const [pl, recovery, profitability] = await Promise.all([
+        api.getPLStats(shopId),
+        api.getRecoveryStats(shopId),
+        api.getProfitabilityStats(shopId)
+      ]);
+      set({ 
+        analytics: { 
+          pl: pl.stats, 
+          recovery, 
+          profitability: profitability.profitability 
+        } 
+      });
+    } catch (error: any) {
+      console.error('Failed to fetch analytics:', error);
+    }
+  },
+}),
+{
+  name: 'dukandost-storage',
+  storage: createJSONStorage(() => localStorage),
+  partialize: (state) => ({
+    customers: state.customers,
+    products: state.products,
+    staff: state.staff,
+    vendors: state.vendors,
+    currentShopId: state.currentShopId,
+    analytics: state.analytics
+  }),
+}
+)
+);

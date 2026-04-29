@@ -60,14 +60,14 @@ export default function AdminDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'overview': return <Overview />;
-      case 'users': return <UserManagement />;
+      case 'overview': return <Overview setActiveTab={setActiveTab} />;
+      case 'users': return <UserManagement setActiveTab={setActiveTab} />;
       case 'subscriptions': return <SubscriptionManagement />;
       case 'payments': return <PaymentManagement />;
       case 'business': return <BusinessRequests />;
       case 'notifications': return <NotificationCenter />;
       case 'settings': return <AdminSettings />;
-      default: return <Overview />;
+      default: return <Overview setActiveTab={setActiveTab} />;
     }
   };
 

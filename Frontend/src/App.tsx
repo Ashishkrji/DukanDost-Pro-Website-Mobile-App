@@ -24,6 +24,13 @@ import OTPVerify from './pages/OTPVerify/OTPVerify';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminLogin from './pages/Admin/AdminLogin';
 import Reminders from './pages/Reminders/Reminders';
+import DigitalKhata from './pages/DigitalKhata/DigitalKhata';
+import CustomerLedger from './pages/DigitalKhata/CustomerLedger';
+import { Vendors, VendorDetail } from './pages/Vendors';
+import Campaigns from './pages/Campaigns/Campaigns';
+
+import NewInvoice from './pages/Billing/NewInvoice';
+
 
 // Footer & Info Pages
 import About from './pages/about/about';
@@ -99,12 +106,16 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           
           {/* Khata / Ledger */}
-          <Route path="/khata" element={<Khata />} />
-          <Route path="/khata/:id" element={<KhataDetail />} />
+          <Route path="/khata" element={<DigitalKhata />} />
+          <Route path="/khata/:id" element={<CustomerLedger />} />
+          <Route path="/vendors" element={<Vendors />} />
+          <Route path="/vendors/:id" element={<VendorDetail />} />
+          <Route path="/dashboard/digital-khata" element={<DigitalKhata />} />
+          <Route path="/dashboard/digital-khata/:id" element={<CustomerLedger />} />
 
           {/* Invoices */}
           <Route path="/invoices" element={<Billing />} />
-          <Route path="/invoices/new" element={<Billing />} />
+          <Route path="/invoices/new" element={<NewInvoice />} />
 
           {/* Inventory */}
           <Route path="/inventory" element={<Inventory />} />
@@ -124,6 +135,9 @@ export default function App() {
 
           {/* Reports */}
           <Route path="/reports" element={<Reports />} />
+
+          {/* Campaigns */}
+          <Route path="/campaigns" element={<Campaigns />} />
 
           {/* Vouchers */}
           <Route path="/vouchers" element={<Vouchers />} />

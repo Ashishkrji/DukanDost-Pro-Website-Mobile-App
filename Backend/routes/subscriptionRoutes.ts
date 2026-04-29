@@ -6,13 +6,17 @@ import {
   cancelPlan,
   requestRefund,
   getPaymentHistory,
-  logBusinessInquiry
+  logBusinessInquiry,
+  handleWebhook
 } from '../controllers/subscriptionController.js';
 import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.use(protect); // All subscription routes are protected
+// Webhook is public (verified via signature)
+router.post('/webhook', handleWebhook);
+
+router.use(protect); // All other routes are protected
 
 router.post('/create-order', createOrder);
 router.post('/verify-payment', verifyPayment);
@@ -23,3 +27,4 @@ router.get('/payment-history', getPaymentHistory);
 router.post('/business-inquiry', logBusinessInquiry);
 
 export default router;
+

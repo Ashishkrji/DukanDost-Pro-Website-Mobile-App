@@ -239,3 +239,67 @@ export const logBusinessInquiry = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: 'Failed to log inquiry' });
   }
 };
+// @desc    Handle Razorpay Webhook
+// @route   POST /api/subscription/webhook
+// @access  Public
+export const handleWebhook = async (req: Request, res: Response) => {
+  try {
+    const signature = req.headers['x-razorpay-signature'] as string;
+    const secret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+
+    // Verify webhook signature
+    const isValid = Razorpay.validateWebhookSignature(
+      JSON.stringify(req.body),
+      signature,
+      secret
+    );
+
+    if (!isValid) {
+      return res.status(400).json({ success: false, message: 'Invalid signature' });
+    }
+
+    const event = req.body.event;
+    const payload = req.body.payload;
+
+    if (event === 'payment.captured') {
+      const payment = payload.payment.entity;
+      const notes = payment.notes;
+      const userId = notes.userId;
+
+      // Only update if not already processed by manual verify
+      const existing = await Subscription.findOne({ paymentId: payment.id });
+      if (!existing) {
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(startDate.getMonth() + (notes.durationMonths || 1));
+
+        const subscription = await Subscription.create({
+          userId,
+          planName: notes.planName,
+          billingType: notes.billingType,
+          amount: payment.amount / 100,
+          paymentId: payment.id,
+          orderId: payment.order_id,
+          subscriptionStartDate: startDate,
+          subscriptionEndDate: endDate,
+          isActive: true
+        });
+
+        await User.findByIdAndUpdate(userId, {
+          plan: notes.planName,
+          subscriptionId: subscription._id
+        });
+        
+        console.log(`[Webhook] Activated ${notes.planName} for User ${userId}`);
+      }
+    } else if (event === 'payment.failed') {
+      console.log(`[Webhook] Payment Failed for Order ${payload.payment.entity.order_id}`);
+      // Notify user via app/email if needed
+    }
+
+    res.status(200).json({ status: 'ok' });
+  } catch (error) {
+    console.error('Webhook Error:', error);
+    res.status(500).json({ success: false, message: 'Webhook processing failed' });
+  }
+};

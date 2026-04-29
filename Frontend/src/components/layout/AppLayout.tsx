@@ -6,8 +6,16 @@ import Header from './Header';
 import { PlanInfoBar } from './PlanInfoBar';
 import { UpgradePopup } from '../auth/UpgradePopup';
 
+import { useEffect } from 'react';
+
 export default function AppLayout() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, fetchProfile } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProfile();
+    }
+  }, [isAuthenticated, fetchProfile]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

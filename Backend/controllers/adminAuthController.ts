@@ -3,8 +3,8 @@ import Admin from '../models/Admin';
 import jwt from 'jsonwebtoken';
 
 const signToken = (id: string) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET!, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '8h',
+  return (jwt as any).sign({ id }, process.env.JWT_SECRET!, {
+    expiresIn: (process.env.JWT_EXPIRES_IN || '8h') as jwt.SignOptions['expiresIn'],
   });
 };
 

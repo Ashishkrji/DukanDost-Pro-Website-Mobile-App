@@ -25,7 +25,8 @@ const pageTitles: Record<string, string> = {
 export default function Header() {
   const { 
     setSidebarOpen, toastMessage, toastType, hideToast, notifications, 
-    markNotificationAsRead, markAllNotificationsAsRead, fetchNotifications 
+    markNotificationAsRead, markAllNotificationsAsRead, fetchNotifications,
+    shops, currentShopId, setCurrentShop, fetchShops
   } = useStore();
   const { user: authUser, logout } = useAuthStore();
   const location = useLocation();
@@ -33,8 +34,12 @@ export default function Header() {
   
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showShopMenu, setShowShopMenu] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
+  const shopRef = useRef<HTMLDivElement>(null);
+
+  const currentShop = shops.find((s: any) => s._id === currentShopId) || shops[0] || { name: 'Main Shop' };
 
   const pageTitle = Object.entries(pageTitles).find(([path]) =>
     location.pathname.startsWith(path)
@@ -56,9 +61,13 @@ export default function Header() {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setShowProfileMenu(false);
       }
+      if (shopRef.current && !shopRef.current.contains(event.target as Node)) {
+        setShowShopMenu(false);
+      }
     }
     document.addEventListener('mousedown', handleClickOutside);
     fetchNotifications();
+    fetchShops();
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
@@ -86,10 +95,55 @@ export default function Header() {
           <p className="text-[11px] text-slate-500 hidden sm:block">{today}</p>
         </div>
 
-        {/* Online Store Status */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-xl">
-          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-xs font-semibold text-green-700">Store Online</span>
+        {/* Shop Switcher */}
+        <div className="relative hidden md:block" ref={shopRef}>
+          <div 
+            onClick={() => setShowShopMenu(!showShopMenu)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl cursor-pointer transition-colors"
+          >
+            <div className="w-2 h-2 bg-green-500 rounded-full" />
+            <span className="text-xs font-bold text-slate-700">{currentShop.name}</span>
+            <ChevronDown className={cn("text-slate-400 transition-transform duration-200", showShopMenu && "rotate-180")} size={12} />
+          </div>
+
+          {showShopMenu && (
+            <div className="absolute left-0 mt-2 w-48 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+              <div className="p-3 bg-slate-50 border-b border-slate-100">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Switch Shop</p>
+              </div>
+              <div className="p-1">
+                {shops.length > 0 ? shops.map((shop: any) => (
+                  <button
+                    key={shop._id}
+                    onClick={() => {
+                      setCurrentShop(shop._id);
+                      setShowShopMenu(false);
+                    }}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 text-xs rounded-lg transition-colors",
+                      currentShopId === shop._id || (!currentShopId && shop === shops[0])
+                        ? "bg-orange-50 text-[#FF6B00] font-bold"
+                        : "text-slate-600 hover:bg-slate-50 font-medium"
+                    )}
+                  >
+                    {shop.name}
+                    {(currentShopId === shop._id || (!currentShopId && shop === shops[0])) && <Check size={12} />}
+                  </button>
+                )) : (
+                  <div className="p-3 text-center text-[10px] text-slate-400">
+                    Main Shop
+                  </div>
+                )}
+              </div>
+              {authUser?.plan === 'Business' && (
+                <div className="p-2 border-t border-slate-100">
+                  <button className="w-full py-2 text-[10px] font-bold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                    + Add New Branch
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Upgrade Prompt */}

@@ -14,12 +14,19 @@ export default function Inventory() {
 }
 
 function InventoryContent() {
-  const { products, addProduct, updateProductStock, showToast } = useStore();
+  const { products, addProduct, updateProductStock, addInventoryEntry, fetchInventoryHistory, showToast } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('All');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  
   const [editingProduct, setEditingProduct] = useState<string | null>(null);
   const [editStock, setEditStock] = useState('');
+  const [stockAction, setStockAction] = useState<'Purchase' | 'Sale' | 'Adjustment' | 'Return'>('Purchase');
+  const [stockNote, setStockNote] = useState('');
   const [newName, setNewName] = useState('');
   const [newCategory, setNewCategory] = useState('Groceries');
   const [newPrice, setNewPrice] = useState('');
@@ -88,11 +95,28 @@ function InventoryContent() {
     setShowAddModal(false);
   };
 
-  const handleUpdateStock = (id: string) => {
-    if (!editStock) return;
-    updateProductStock(id, Number(editStock));
+  const handleUpdateStock = async (id: string) => {
+    if (!editStock || Number(editStock) <= 0) return;
+    
+    await addInventoryEntry({
+      productId: id,
+      type: stockAction,
+      quantity: Number(editStock),
+      notes: stockNote
+    });
+
     setEditingProduct(null);
     setEditStock('');
+    setStockNote('');
+  };
+
+  const handleViewHistory = async (product: any) => {
+    setSelectedProduct(product);
+    setShowHistoryModal(true);
+    setHistoryLoading(true);
+    const history = await fetchInventoryHistory(product._id || product.id);
+    setHistoryItems(history);
+    setHistoryLoading(false);
   };
 
   return (
@@ -286,12 +310,21 @@ function InventoryContent() {
                       <StockBadge status={product.status} />
                     </td>
                     <td className="px-5 py-4 hidden md:table-cell text-right">
-                      <button
-                        onClick={() => { setEditingProduct(product.id); setEditStock(String(product.stock)); }}
-                        className="px-3 py-1.5 text-xs font-semibold text-orange-600 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors mr-1"
-                      >
-                        Edit Stock
-                      </button>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleViewHistory(product)}
+                          className="p-2 text-slate-400 hover:text-blue-600 transition-colors"
+                          title="Stock History"
+                        >
+                          <Clock size={16} />
+                        </button>
+                        <button
+                          onClick={() => { setEditingProduct(product.id); setEditStock(''); }}
+                          className="px-3 py-1.5 text-xs font-semibold text-orange-600 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+                        >
+                          Update Stock
+                        </button>
+                      </div>
                     </td>
                   </tr>
                   );
@@ -328,6 +361,95 @@ function InventoryContent() {
             <InputField label="Price (₹)" placeholder="245" type="number" required value={newPrice} onChange={e => setNewPrice(e.target.value)} />
             <InputField label="Stock Qty" placeholder="50" type="number" required value={newStock} onChange={e => setNewStock(e.target.value)} />
           </div>
+        </div>
+      </Modal>
+
+      {/* Update Stock Modal */}
+      <Modal
+        isOpen={!!editingProduct}
+        onClose={() => setEditingProduct(null)}
+        title="Update Stock"
+        subtitle="Manage inventory levels"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setEditingProduct(null)}>Cancel</Button>
+            <Button onClick={() => handleUpdateStock(editingProduct!)}>Save Update</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <SelectField 
+            label="Action Type"
+            value={stockAction}
+            onChange={(e) => setStockAction(e.target.value as any)}
+            options={[
+              { value: 'Purchase', label: 'Purchase (In)' },
+              { value: 'Sale', label: 'Sale (Out)' },
+              { value: 'Adjustment', label: 'Adjustment (+/-)' },
+              { value: 'Return', label: 'Return (In)' },
+            ]}
+          />
+          <InputField 
+            label="Quantity" 
+            type="number" 
+            placeholder="0"
+            value={editStock}
+            onChange={(e) => setEditStock(e.target.value)}
+          />
+          <InputField 
+            label="Note" 
+            placeholder="e.g. Received from supplier, Damaged, etc."
+            value={stockNote}
+            onChange={(e) => setStockNote(e.target.value)}
+          />
+        </div>
+      </Modal>
+
+      {/* Stock History Modal */}
+      <Modal
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        title={`Stock History: ${selectedProduct?.name}`}
+        subtitle="Full audit log of inventory changes"
+        width={600}
+      >
+        <div className="max-h-[400px] overflow-y-auto">
+          {historyLoading ? (
+            <div className="p-8 text-center animate-pulse">Loading history...</div>
+          ) : historyItems.length === 0 ? (
+            <p className="p-8 text-center text-slate-400">No history found for this item.</p>
+          ) : (
+            <table className="w-full text-left">
+              <thead className="sticky top-0 bg-white border-b">
+                <tr>
+                  <th className="py-2 text-[10px] font-bold text-slate-400 uppercase">Date</th>
+                  <th className="py-2 text-[10px] font-bold text-slate-400 uppercase">Action</th>
+                  <th className="py-2 text-[10px] font-bold text-slate-400 uppercase text-center">Qty</th>
+                  <th className="py-2 text-[10px] font-bold text-slate-400 uppercase text-right">Stock</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {historyItems.map((h, i) => (
+                  <tr key={i} className="text-sm">
+                    <td className="py-3 font-medium">{new Date(h.date).toLocaleDateString()}</td>
+                    <td className="py-3">
+                      <span className={cn(
+                        "text-[10px] font-bold px-2 py-0.5 rounded-full uppercase",
+                        h.type === 'Purchase' || h.type === 'Return' ? "bg-green-50 text-green-600" : "bg-red-50 text-red-600"
+                      )}>
+                        {h.type}
+                      </span>
+                      {h.notes && <p className="text-[10px] text-slate-400 mt-0.5">{h.notes}</p>}
+                    </td>
+                    <td className="py-3 text-center font-bold">
+                      {h.type === 'Purchase' || h.type === 'Return' ? '+' : '-'}{h.quantity}
+                    </td>
+                    <td className="py-3 text-right font-mono font-bold">{h.currentStock}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </Modal>
     </div>

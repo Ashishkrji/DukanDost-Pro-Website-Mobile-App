@@ -38,8 +38,13 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin', 'manager', 'staff'],
+    enum: ['user', 'staff', 'admin', 'super_admin'],
     default: 'user',
+  },
+  parentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null, // null means they are the owner/independent user
   },
   resetPasswordToken: String,
   resetPasswordExpire: Date,
@@ -52,6 +57,9 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Subscription',
   },
+  address: String,
+  upiId: String,
+  GSTIN: String,
 }, {
   timestamps: true,
 });

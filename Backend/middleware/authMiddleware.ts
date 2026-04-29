@@ -34,6 +34,11 @@ export const protect = async (req: any, res: Response, next: NextFunction) => {
 
     // GRANT ACCESS TO PROTECTED ROUTE
     req.user = currentUser;
+    
+    // Multi-tenant Scoping: If staff, use parentId as owner context
+    // If owner, use their own ID.
+    req.ownerId = currentUser.role === 'staff' ? currentUser.parentId : currentUser._id;
+    
     next();
   } catch (err) {
     return res.status(401).json({

@@ -11,7 +11,7 @@ import axios from 'axios';
 import { cn } from '@/lib/utils';
 import { useAdminAuthStore } from '@/store/adminAuthStore';
 
-export default function UserManagement() {
+export default function UserManagement({ setActiveTab }: { setActiveTab?: (tab: string) => void }) {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -109,6 +109,11 @@ export default function UserManagement() {
         setUsers(users.map(u => u._id === upgradeUser._id ? { ...u, plan: upgradeData.plan } : u));
         setUpgradeUser(null);
         showToast('Plan upgraded successfully', 'success');
+        
+        // Navigate to subscription registry after upgrade
+        if (setActiveTab) {
+          setTimeout(() => setActiveTab('subscriptions'), 1500);
+        }
       }
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Upgrade failed', 'error');

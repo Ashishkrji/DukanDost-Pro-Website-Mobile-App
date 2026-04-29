@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  shopId: { type: mongoose.Schema.Types.ObjectId, ref: 'Shop' },
   name: { type: String, required: true, trim: true },
   category: { type: String, default: 'General' },
   price: { type: Number, required: true, min: 0 },
