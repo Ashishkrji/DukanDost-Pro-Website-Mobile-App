@@ -12,7 +12,6 @@ import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { Card, StatCard, Badge } from '@/components/ui';
-import { weeklyChartData, categoryData } from '@/lib/mockData';
 import { useLanguageStore } from '@/store/languageStore';
 
 const COLORS = ['#FF6B00', '#00C853', '#6C3483', '#1A1A2E', '#0EA5E9', '#F59E0B'];
@@ -21,7 +20,7 @@ export default function Dashboard() {
   const { 
     transactions, customers, products, orders, showToast, user,
     fetchCustomers, fetchTransactions, fetchProducts, fetchStaff, fetchPayments, fetchNotifications,
-    fetchVendors, vendors
+    fetchVendors, vendors, fetchAnalytics, analytics
   } = useStore();
 
   const { t } = useLanguageStore();
@@ -35,21 +34,20 @@ export default function Dashboard() {
         fetchStaff(),
         fetchPayments(),
         fetchNotifications(),
-        fetchVendors()
+        fetchVendors(),
+        fetchAnalytics()
       ]);
     };
     loadData();
   }, []);
 
-  const overdueCustomers = customers.filter(c => c.status === 'Overdue').slice(0, 4);
-  const lowStockItems = products.filter(p => p.status === 'LOW STOCK' || p.status === 'OUT OF STOCK');
-  const pendingOrders = orders.filter(o => o.status === 'Pending');
+  const overdueCustomers = (customers || []).filter(c => c.status === 'Overdue').slice(0, 4);
+  const lowStockItems = (products || []).filter(p => p.status === 'LOW STOCK' || p.status === 'OUT OF STOCK');
+  const pendingOrders = (orders || []).filter(o => o.status === 'Pending');
 
-  const totalLena = customers.filter(c => c.balance > 0).reduce((s, c) => s + c.balance, 0);
-  const totalDena = vendors.reduce((s, v) => s + (v.balance || 0), 0);
-  const todaySales = transactions
-    .filter(t => t.type === 'Liya' && t.createdAt?.includes('26 Apr'))
-    .reduce((s, t) => s + t.amount, 0);
+  const totalLena = analytics?.recovery?.totalOutstanding || 0;
+  const totalDena = (vendors || []).reduce((s, v) => s + (v.balance || 0), 0);
+  const todaySales = analytics?.pl?.totalSales || 0;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-8 animate-[pageIn_0.3s_ease]">
@@ -151,9 +149,9 @@ export default function Dashboard() {
             </select>
           </div>
           <div className="h-64 w-full">
-            {transactions.length > 0 ? (
+            {analytics?.trends?.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weeklyChartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                <AreaChart data={analytics?.trends || []} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#FF6B00" stopOpacity={0.25} />
@@ -197,10 +195,10 @@ export default function Dashboard() {
         <Card className="p-6 flex flex-col">
           <h3 className="font-display text-base font-bold text-slate-900 mb-4">Top Categories</h3>
           <div className="flex-1 flex items-center justify-center">
-            {categoryData.some(c => c.value > 0) ? (
+            {analytics?.profitability?.length > 0 ? (
               <PieChart width={160} height={160}>
-                <Pie data={categoryData} cx={75} cy={75} innerRadius={50} outerRadius={72} dataKey="value" paddingAngle={3}>
-                  {categoryData.map((_, i) => (
+                <Pie data={analytics?.profitability || []} cx={75} cy={75} innerRadius={50} outerRadius={72} dataKey="totalSales" paddingAngle={3}>
+                  {(analytics?.profitability || []).map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
@@ -213,13 +211,13 @@ export default function Dashboard() {
             )}
           </div>
           <div className="space-y-2 mt-2">
-            {categoryData.some(c => c.value > 0) ? categoryData.slice(0, 4).map((cat, i) => (
+            {analytics?.profitability?.length > 0 ? analytics.profitability.slice(0, 4).map((cat, i) => (
               <div key={cat.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
                   <span className="text-xs text-slate-600 font-medium">{cat.name}</span>
                 </div>
-                <span className="text-xs font-bold text-slate-800">{cat.value}%</span>
+                <span className="text-xs font-bold text-slate-800">₹{cat.totalSales.toLocaleString()}</span>
               </div>
             )) : (
               <p className="text-[10px] text-slate-400 text-center italic">Items add karein data dekhne ke liye</p>
@@ -298,7 +296,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100/50">
-                {transactions.length > 0 ? transactions.slice(0, 5).map((tx) => (
+                {(transactions || []).length > 0 ? transactions.slice(0, 5).map((tx) => (
                   <tr key={tx.id} className="hover:bg-orange-50/20 transition-colors">
                     <td className="px-5 py-3.5">
                       <p className="text-xs font-semibold text-slate-700">{tx.createdAt?.split(', ')[0]}</p>
@@ -373,7 +371,7 @@ export default function Dashboard() {
             </Link>
           </div>
           <div className="space-y-2.5">
-            {lowStockItems.length > 0 ? lowStockItems.slice(0, 4).map(item => (
+            {(lowStockItems || []).length > 0 ? lowStockItems.slice(0, 4).map(item => (
               <div key={item.id} className="flex items-center justify-between p-2.5 bg-red-50 rounded-xl">
                 <div className="flex items-center gap-2.5">
                   <span className="text-xl">{item.icon || '📦'}</span>

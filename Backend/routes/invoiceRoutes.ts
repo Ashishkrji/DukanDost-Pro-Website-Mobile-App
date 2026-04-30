@@ -1,6 +1,7 @@
 import express from 'express';
 import Invoice from '../models/Invoice.ts';
 import Customer from '../models/Customer.ts';
+import Product from '../models/Product.ts';
 import { checkFeatureAccess } from '../middleware/planMiddleware';
 
 const router = express.Router();
@@ -88,7 +89,18 @@ router.post('/', async (req: any, res) => {
       notes,
       isGST,
     });
+
     const saved = await invoice.save();
+
+    // Deduct Stock from Inventory
+    for (const item of items) {
+      if (item.productId) {
+        await Product.findOneAndUpdate(
+          { _id: item.productId, userId: ownerId },
+          { $inc: { stock: -Number(item.qty) } }
+        );
+      }
+    }
 
     // Update customer balance (invoice adds to what they owe)
     if (customer) {

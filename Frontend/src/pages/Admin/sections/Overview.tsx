@@ -10,32 +10,28 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { cn } from '@/lib/utils';
 import { useAdminAuthStore } from '@/store/adminAuthStore';
 
-const mockChartData = [
-  { name: 'Mon', revenue: 4000 },
-  { name: 'Tue', revenue: 3000 },
-  { name: 'Wed', revenue: 2000 },
-  { name: 'Thu', revenue: 2780 },
-  { name: 'Fri', revenue: 1890 },
-  { name: 'Sat', revenue: 2390 },
-  { name: 'Sun', revenue: 3490 },
-];
-
 export default function Overview() {
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
+  const [trends, setTrends] = useState<any[]>([]);
   const { adminToken } = useAdminAuthStore();
 
   useEffect(() => {
     const fetchStats = async () => {
       if (!adminToken) return;
       try {
-        const { data } = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin/stats`, {
-          headers: { Authorization: `Bearer ${adminToken}` }
-        });
-        if (data.success) setStats(data.stats);
+        const [{ data: sRes }, { data: tRes }] = await Promise.all([
+          axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin/stats`, {
+            headers: { Authorization: `Bearer ${adminToken}` }
+          }),
+          axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/admin/revenue-trends`, {
+            headers: { Authorization: `Bearer ${adminToken}` }
+          })
+        ]);
+        if (sRes.success) setStats(sRes.stats);
+        if (tRes.success) setTrends(tRes.trends);
       } catch (err) {
-        console.error('Failed to fetch stats');
+        console.error('Failed to fetch admin data');
       } finally {
         setLoading(false);
       }
@@ -101,7 +97,7 @@ export default function Overview() {
           </div>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" aspect={2.5} minHeight={320}>
-              <AreaChart data={mockChartData}>
+              <AreaChart data={trends}>
                 <defs>
                   <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#FF6B00" stopOpacity={0.3} />

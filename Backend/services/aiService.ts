@@ -1,5 +1,162 @@
 import LedgerEntry from '../models/LedgerEntry.ts';
 import Customer from '../models/Customer.ts';
+import Transaction from '../models/Transaction.ts';
+import Product from '../models/Product.ts';
+
+// ── OpenRouter Integration ──────────────────────────────────
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const MODEL = 'meta-llama/llama-3-8b-instruct:free'; // or any preferred model
+
+export const processAIChat = async (userId: string, messages: any[]) => {
+  try {
+    const systemPrompt = `
+      You are DukanDost AI, a premium business assistant for small Indian businesses.
+      You help shopkeepers manage their "Khata" (ledger), customers, and inventory.
+      
+      User Context:
+      - App: DukanDost Pro
+      - Features: Digital Khata, Invoicing, Inventory, Staff Management, Payments.
+      - Style: Professional yet friendly, uses Hinglish (Hindi + English) when appropriate.
+      
+      Capabilities:
+      1. Add new customers.
+      2. Record "Udhaar" (Credit) or "Payment" (Received).
+      3. Generate Invoices.
+      4. Show analytics/sales insights.
+      5. Answer queries about business health.
+
+      IMPORTANT: If a user wants to perform an action (e.g. "Add Ramu as customer"), 
+      identify the intent and return a structured tool call.
+    `;
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'HTTP-Referer': 'https://dukandost.pro',
+        'X-Title': 'DukanDost Pro',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [{ role: 'system', content: systemPrompt }, ...messages],
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'add_customer',
+              description: 'Add a new customer to the digital khata',
+              parameters: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string', description: 'Full name of the customer' },
+                  phone: { type: 'string', description: '10-digit mobile number' },
+                  initialBalance: { type: 'number', description: 'Starting balance if any' }
+                },
+                required: ['name', 'phone']
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'add_transaction',
+              description: 'Record a credit or payment entry for a customer',
+              parameters: {
+                type: 'object',
+                properties: {
+                  customerName: { type: 'string', description: 'Name of the customer' },
+                  amount: { type: 'number', description: 'Amount in Rupees' },
+                  type: { type: 'string', enum: ['Udhaar', 'Payment'], description: 'Type of transaction' }
+                },
+                required: ['customerName', 'amount', 'type']
+              }
+            }
+          },
+          {
+            type: 'function',
+            function: {
+              name: 'add_product',
+              description: 'Add a new product to inventory',
+              parameters: {
+                type: 'object',
+                properties: {
+                  name: { type: 'string', description: 'Product name' },
+                  price: { type: 'number', description: 'Selling price' },
+                  stock: { type: 'number', description: 'Initial stock quantity' },
+                  category: { type: 'string', description: 'Product category' }
+                },
+                required: ['name', 'price', 'stock']
+              }
+            }
+          }
+        ]
+      })
+    });
+
+    const data = await response.json();
+    
+    if (data.error) throw new Error(data.error.message || 'AI processing failed');
+
+    const choice = data.choices[0];
+    return {
+      message: choice.message.content,
+      tool_calls: choice.message.tool_calls
+    };
+  } catch (error: any) {
+    console.error('AI Chat Error:', error);
+    throw error;
+  }
+};
+
+export const executeAIAction = async (userId: string, action: string, params: any) => {
+  switch (action) {
+    case 'add_customer':
+      const customer = new Customer({
+        userId,
+        name: params.name,
+        phone: params.phone,
+        balance: params.initialBalance || 0,
+        status: params.initialBalance > 0 ? 'Udhaar' : 'Up-to-date',
+        initials: params.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()
+      });
+      return await customer.save();
+
+    case 'add_transaction':
+      const cust = await Customer.findOne({ userId, name: new RegExp(params.customerName, 'i') });
+      if (!cust) throw new Error('Customer not found');
+      
+      const txType = params.type === 'Udhaar' ? 'Diya' : 'Liya';
+      const tx = new Transaction({
+        userId,
+        customerId: cust._id,
+        customerName: cust.name,
+        amount: params.amount,
+        type: txType,
+        createdAt: new Date().toISOString()
+      });
+      
+      // Update customer balance
+      cust.balance += (params.type === 'Udhaar' ? params.amount : -params.amount);
+      await cust.save();
+      return await tx.save();
+
+    case 'add_product':
+      const product = new Product({
+        userId,
+        name: params.name,
+        price: params.price,
+        stock: params.stock,
+        category: params.category || 'General',
+        sku: 'SKU-' + Date.now().toString().slice(-6),
+        status: params.stock > 10 ? 'IN STOCK' : params.stock > 0 ? 'LOW STOCK' : 'OUT OF STOCK'
+      });
+      return await product.save();
+
+    default:
+      throw new Error('Action not supported');
+  }
+};
 
 export const calculateHealthScore = async (userId: string) => {
   try {

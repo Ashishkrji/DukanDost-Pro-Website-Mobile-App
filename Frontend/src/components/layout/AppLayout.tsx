@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import { PlanInfoBar } from './PlanInfoBar';
 import { UpgradePopup } from '../auth/UpgradePopup';
+import FloatingChatbot from '../ai/FloatingChatbot';
 
 import { useEffect } from 'react';
 
@@ -33,6 +34,7 @@ export default function AppLayout() {
       </div>
       
       <UpgradePopup />
+      <FloatingChatbot />
     </div>
   );
 }

@@ -6,12 +6,22 @@ class CacheService {
   private fallbackMap: Map<string, { value: any; expiry: number }> = new Map();
 
   constructor() {
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+      console.log('[Cache] No Redis URL provided. Using in-memory cache.');
+      this.isConnected = false;
+      return;
+    }
+
     this.client = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379'
+      url: redisUrl
     });
 
     this.client.on('error', (err: any) => {
-      console.warn('[Cache] Redis Error / Not Connected. Using in-memory fallback.');
+      // Only log if it's not a connection failure when we're already expecting to fail
+      if (this.isConnected) {
+        console.warn('[Cache] Redis Connection Lost. Falling back to memory.');
+      }
       this.isConnected = false;
     });
 
@@ -19,6 +29,7 @@ class CacheService {
       console.log('[Cache] Redis Connected successfully.');
       this.isConnected = true;
     }).catch(() => {
+      console.warn('[Cache] Redis Connection Failed. Using in-memory fallback.');
       this.isConnected = false;
     });
   }

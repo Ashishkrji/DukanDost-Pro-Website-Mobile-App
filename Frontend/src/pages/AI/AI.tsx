@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Card, PageHeader, Badge, Button } from '@/components/ui';
 import { useStore } from '@/store/useStore';
 import { useNavigate } from 'react-router-dom';
+import * as api from '../../services/api';
 
 interface ChatMessage {
   type: 'bot' | 'user';
@@ -486,7 +487,7 @@ export default function AI() {
 
                 {!healthData?.loanEligibility?.isEligible && (
                   <p className="text-[11px] text-slate-500 italic leading-relaxed">
-                    Higher health score (>70) aur consistent revenue hone par aap loan ke liye eligible ho jayenge.
+                    Higher health score ({'>'}70) aur consistent revenue hone par aap loan ke liye eligible ho jayenge.
                   </p>
                 )}
               </div>
@@ -519,7 +520,5 @@ export default function AI() {
         </div>
       </div>
     </div>
-  );
-}
   );
 }

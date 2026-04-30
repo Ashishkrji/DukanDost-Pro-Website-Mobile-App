@@ -1,4 +1,5 @@
 import express from 'express';
+import Subscription from '../models/Subscription';
 import { adminLogin, getAdminProfile } from '../controllers/adminAuthController';
 import { protectAdmin, restrictTo } from '../middleware/adminMiddleware';
 import { 
@@ -28,6 +29,31 @@ router.use(protectAdmin);
 
 router.get('/me', getAdminProfile);
 router.get('/stats', getAdminStats);
+router.get('/revenue-trends', async (req: any, res) => {
+  try {
+    const { days = 7 } = req.query;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - Number(days));
+
+    const trends = await Subscription.aggregate([
+      { $match: { createdAt: { $gte: startDate }, paymentStatus: 'captured' } },
+      { $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          revenue: { $sum: "$amount" }
+      }},
+      { $sort: { _id: 1 } }
+    ]);
+
+    const formatted = trends.map(t => ({
+      name: new Date(t._id).toLocaleDateString('en-IN', { weekday: 'short' }),
+      revenue: t.revenue
+    }));
+
+    res.json({ success: true, trends: formatted });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Trend error', error });
+  }
+});
 router.get('/users', getAllUsers);
 router.get('/inquiries', getBusinessInquiries);
 router.patch('/inquiries/:id', updateInquiryStatus);

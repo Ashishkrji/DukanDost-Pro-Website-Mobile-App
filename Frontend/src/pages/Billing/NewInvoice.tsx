@@ -16,6 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 
 interface InvoiceItem {
+  productId?: string;
   name: string;
   qty: number;
   price: number;
@@ -96,6 +97,7 @@ export default function NewInvoice() {
       await addInvoice({
         customerId: selectedCustomerId,
         items: items.map(it => ({
+          productId: it.productId,
           name: it.name,
           qty: Number(it.qty),
           price: Number(it.price),
@@ -217,13 +219,32 @@ export default function NewInvoice() {
                   <div key={index} className="grid grid-cols-12 gap-3 items-end p-4 bg-slate-50/50 rounded-2xl border border-slate-100 relative group animate-in zoom-in-95 duration-200">
                     <div className="col-span-12 md:col-span-4 space-y-1.5">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Item Description</label>
-                      <input 
-                        type="text"
-                        placeholder="Product name..."
-                        value={item.name}
-                        onChange={(e) => updateItem(index, 'name', e.target.value)}
-                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 ring-orange-500/10 transition-all"
-                      />
+                      <div className="relative">
+                        <input 
+                          type="text"
+                          placeholder="Search or type product..."
+                          value={item.name}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            updateItem(index, 'name', val);
+                            const found = products.find(p => p.name.toLowerCase() === val.toLowerCase());
+                            if (found) {
+                              updateItem(index, 'productId', found.id || (found as any)._id);
+                              updateItem(index, 'price', found.price);
+                              updateItem(index, 'gstRate', found.gstRate || 0);
+                            }
+                          }}
+                          list={`product-list-${index}`}
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:ring-2 ring-orange-500/10 transition-all"
+                        />
+                        <datalist id={`product-list-${index}`}>
+                          {products.map(p => (
+                            <option key={p.id || (p as any)._id} value={p.name}>
+                              ₹{p.price} - Stock: {p.stock}
+                            </option>
+                          ))}
+                        </datalist>
+                      </div>
                     </div>
                     <div className="col-span-4 md:col-span-2 space-y-1.5">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Qty</label>

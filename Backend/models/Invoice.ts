@@ -41,7 +41,6 @@ const invoiceSchema = new mongoose.Schema({
 invoiceSchema.index({ userId: 1 });
 invoiceSchema.index({ customerId: 1 });
 invoiceSchema.index({ shopId: 1 });
-invoiceSchema.index({ invoiceNumber: 1 });
 invoiceSchema.index({ createdAt: -1 });
 
 // Auto-generate invoice number

@@ -202,6 +202,7 @@ interface AppState {
     pl: any;
     recovery: any;
     profitability: any[];
+    trends: any[];
   };
 
   // UI State
@@ -302,7 +303,8 @@ export const useStore = create<AppState>()(
   analytics: {
     pl: { totalSales: 0, totalPurchases: 0, totalExpenses: 0, netProfit: 0, cashIn: 0, cashOut: 0 },
     recovery: { totalOutstanding: 0, customerCount: 0, aging: { '0-15 days': 0, '16-30 days': 0, '31-60 days': 0, '60+ days': 0 } },
-    profitability: []
+    profitability: [],
+    trends: []
   },
 
 
@@ -385,7 +387,7 @@ export const useStore = create<AppState>()(
   fetchCustomers: async () => {
     try {
       const data = await api.getCustomers();
-      if (data && data.length > 0) set({ customers: data });
+      if (data.success) set({ customers: data.customers });
     } catch {
       // Keep mock data on error
     }
@@ -394,7 +396,7 @@ export const useStore = create<AppState>()(
   fetchTransactions: async () => {
     try {
       const data = await api.getTransactions();
-      if (data && data.length > 0) set({ transactions: data });
+      if (data.success) set({ transactions: data.transactions });
     } catch {
       // Keep mock data on error
     }
@@ -403,7 +405,7 @@ export const useStore = create<AppState>()(
   fetchProducts: async () => {
     try {
       const data = await api.getProducts();
-      if (data && data.length > 0) set({ products: data });
+      if (data.success) set({ products: data.products });
     } catch {
       // Keep mock data on error
     }
@@ -412,7 +414,7 @@ export const useStore = create<AppState>()(
   fetchStaff: async () => {
     try {
       const data = await api.getStaff();
-      if (data && data.length > 0) set({ staff: data });
+      if (data.success) set({ staff: data.staff });
     } catch {
       // Keep mock data on error
     }
@@ -701,16 +703,18 @@ export const useStore = create<AppState>()(
   fetchAnalytics: async () => {
     try {
       const shopId = get().currentShopId;
-      const [pl, recovery, profitability] = await Promise.all([
+      const [pl, recovery, profitability, trends] = await Promise.all([
         api.getPLStats(shopId),
         api.getRecoveryStats(shopId),
-        api.getProfitabilityStats(shopId)
+        api.getProfitabilityStats(shopId),
+        api.getTrends()
       ]);
       set({ 
         analytics: { 
           pl: pl.stats, 
           recovery, 
-          profitability: profitability.profitability 
+          profitability: profitability.profitability,
+          trends: trends.trends
         } 
       });
     } catch (error: any) {

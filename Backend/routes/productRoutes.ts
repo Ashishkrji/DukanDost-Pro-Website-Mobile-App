@@ -22,9 +22,9 @@ router.get('/', async (req, res) => {
       ];
     }
     const products = await Product.find(query).sort({ createdAt: -1 });
-    res.json(products);
+    res.json({ success: true, products });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error });
+    res.status(500).json({ success: false, message: 'Server Error', error });
   }
 });
 

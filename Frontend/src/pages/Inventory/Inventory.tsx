@@ -14,8 +14,12 @@ export default function Inventory() {
 }
 
 function InventoryContent() {
-  const { products, addProduct, updateProductStock, addInventoryEntry, fetchInventoryHistory, showToast } = useStore();
+  const { products, addProduct, updateProductStock, addInventoryEntry, fetchInventoryHistory, fetchProducts, showToast } = useStore();
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
   const [activeTab, setActiveTab] = useState('All');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);

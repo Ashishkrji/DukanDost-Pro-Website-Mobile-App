@@ -208,6 +208,8 @@ export const getRecoveryStats = (shopId?: string) =>
   api.get('/analytics/recovery', { params: { shopId } }).then(r => r.data);
 export const getProfitabilityStats = (shopId?: string) => 
   api.get('/analytics/profitability', { params: { shopId } }).then(r => r.data);
+export const getTrends = (days?: number) => 
+  api.get('/analytics/trends', { params: { days } }).then(r => r.data);
 
 // ── Shops ────────────────────────────────────────────────────
 export const getShops = () =>
@@ -231,5 +233,11 @@ export const sendCampaign = (id: string) =>
 // ── AI Insights ──────────────────────────────────────────────
 export const getBusinessHealth = () => 
   api.get('/ai-insights/health-score').then(r => r.data);
+
+export const aiChat = (messages: any[]) =>
+  api.post('/ai/chat', { messages }).then(r => r.data);
+
+export const aiExecute = (action: string, params: any) =>
+  api.post('/ai/execute', { action, params }).then(r => r.data);
 
 export default api;

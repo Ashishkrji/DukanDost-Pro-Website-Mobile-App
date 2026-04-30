@@ -141,7 +141,12 @@ export default function CustomerLedger() {
             <Button 
               variant="whatsapp" 
               icon={<MessageCircle size={18} />}
-              onClick={() => showToast('WhatsApp reminder sent!')}
+              onClick={() => {
+                const message = `Namaste ${customer.name}, aapka DukanDost (Ledger) balance ₹${customer.remainingBalance} hai. Kripya samay par bhugtan karein. Dhanyawad!`;
+                const url = `https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+                window.open(url, '_blank');
+                showToast('WhatsApp link opened!');
+              }}
               className="flex-1 md:flex-initial"
             >
               Remind

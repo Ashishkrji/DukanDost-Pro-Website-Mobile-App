@@ -150,4 +150,38 @@ router.get('/profitability', async (req: any, res) => {
   }
 });
 
+// GET /api/analytics/trends (Weekly sales vs expenses)
+router.get('/trends', async (req: any, res) => {
+  try {
+    const ownerId = req.ownerId;
+    const { days = 7 } = req.query;
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - Number(days));
+    
+    const entries = await LedgerEntry.aggregate([
+      { $match: { 
+          userId: new mongoose.Types.ObjectId(ownerId),
+          date: { $gte: startDate }
+      }},
+      { $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
+          revenue: { $sum: { $cond: [{ $eq: ["$transactionType", "Udhaar Diya"] }, "$amount", 0] } },
+          expenses: { $sum: { $cond: [{ $eq: ["$transactionType", "Maal Kharida"] }, "$amount", 0] } }
+      }},
+      { $sort: { _id: 1 } }
+    ]);
+
+    const formatted = entries.map(e => ({
+      name: new Date(e._id).toLocaleDateString('en-IN', { weekday: 'short' }),
+      revenue: e.revenue,
+      expenses: e.expenses
+    }));
+
+    res.json({ success: true, trends: formatted });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Trend analytics error', error });
+  }
+});
+
 export default router;

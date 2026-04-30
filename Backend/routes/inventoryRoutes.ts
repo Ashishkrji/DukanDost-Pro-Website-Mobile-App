@@ -40,9 +40,10 @@ router.post('/entry', async (req: any, res) => {
     const product = await Product.findOne({ _id: productId, userId });
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 
-    if (type === 'PURCHASE' || type === 'RETURN' || (type === 'ADJUSTMENT' && quantity > 0)) {
+    const actionType = type.toUpperCase();
+    if (actionType === 'PURCHASE' || actionType === 'RETURN' || (actionType === 'ADJUSTMENT' && quantity > 0)) {
       (product as any).stock += Math.abs(quantity);
-    } else if (type === 'SALE' || (type === 'ADJUSTMENT' && quantity < 0)) {
+    } else if (actionType === 'SALE' || (actionType === 'ADJUSTMENT' && quantity < 0)) {
       (product as any).stock -= Math.abs(quantity);
     }
 

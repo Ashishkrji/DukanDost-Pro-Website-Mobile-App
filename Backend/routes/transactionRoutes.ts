@@ -19,9 +19,9 @@ router.get('/', async (req, res) => {
       .populate('customerId', 'name phone initials color')
       .sort({ date: -1 })
       .limit(Number(limit));
-    res.json(txns);
+    res.json({ success: true, transactions: txns });
   } catch (error) {
-    res.status(500).json({ message: 'Server Error', error });
+    res.status(500).json({ success: false, message: 'Server Error', error });
   }
 });
 
