@@ -10,33 +10,42 @@
 
 ## 🌟 Key Features
 
-- **AI Business Intelligence**: Proprietary "Business Health Score", automated recovery risk alerts, and smart growth recommendations.
-- **Digital Khata System**: Professional-grade ledger for tracking customer credit (Udhaar) and payments with one-click WhatsApp reminders.
+- **AI Agent (Tool Calling)**: A persistent AI assistant (Llama 3/Gemini) that doesn't just talk—it **acts**. Ask it to "Add a customer named Rahul with 500 balance" or "Add 50 Milk packets to inventory," and it handles the database operations for you.
+- **AI Business Intelligence**: Proprietary "Business Health Score," automated recovery risk alerts, and predictive cashflow recommendations.
+- **Digital Khata System**: Professional-grade ledger for tracking customer credit (Udhaar) and payments with automated WhatsApp reminders.
+- **Smart Invoicing & Inventory Sync**: GST-compliant invoice generation with **atomic stock deduction**. Sales are automatically synced with your inventory levels in real-time.
+- **Staff & Attendance Management**: Full CRUD for staff members with daily attendance tracking and performance metrics.
 - **Marketing Campaigns**: Promotional WhatsApp broadcast engine with audience segmentation for Business plan users.
-- **Invoicing & Billing**: Digital GST-compliant invoice generation with instant sharing and payment link integration.
-- **Financing Visibility**: Integrated credit grading and loan eligibility scoring based on real business history.
-- **Modern & Responsive UI**: Stunning glassmorphic design built with React 19, TailwindCSS, and Motion (Framer).
-- **Secure Architecture**: Hardened with Helmet, rate-limiting, and JWT-based role-based access control (RBAC).
-- **CI/CD & Monitoring**: Automated deployment via GitHub Actions, Sentry error tracking, and Prometheus uptime monitoring.
+- **Financing Visibility**: Integrated credit grading and loan eligibility scoring based on real business transaction history.
+- **Modern & Responsive UI**: Stunning glassmorphic design built with React 19, TailwindCSS, and Framer Motion.
+
+---
+
+## 🛡️ Nodal Security & Persistence
+
+- **Nodal Data Integrity**: Multi-device synchronization with bank-grade AES-256 encryption.
+- **Hybrid Cache**: High-performance Redis caching with a robust in-memory fallback for development environments.
+- **Privacy First**: Compliant with the **Digital Personal Data Protection (DPDP) Act 2023** (India). All data is stored on India-based servers.
+- **Hardened API**: Protected with Helmet, rate-limiting, and RBAC (Role-Based Access Control).
 
 ---
 
 ## 💻 Technology Stack
 
 ### **Frontend**
-- **Framework**: React 19, Vite
+- **Core**: React 19, Vite
 - **Styling**: TailwindCSS (Modern 4.x), Framer Motion
-- **State Management**: Zustand
-- **E2E Testing**: Playwright
+- **State**: Zustand (Atomic State Management)
+- **Networking**: React Query, Axios
 - **Visualization**: Recharts, Lucide Icons
 
 ### **Backend**
 - **Runtime**: Node.js (v20+)
-- **Framework**: Express.js (TypeScript)
+- **Logic**: Express.js (TypeScript)
+- **AI Engine**: OpenRouter (Llama 3 / Gemini Pro)
 - **Database**: MongoDB (via Mongoose)
-- **Security**: Helmet, Express-Rate-Limit, Bcrypt
+- **Security**: Bcrypt, JWT, Helmet, Express-Rate-Limit
 - **Monitoring**: Sentry, Prometheus/Grafana
-- **Testing**: Jest, Supertest
 
 ---
 
@@ -45,7 +54,7 @@
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v20 or higher)
 - [MongoDB](https://www.mongodb.com/)
-- [Razorpay Account](https://razorpay.com/) (for payments)
+- [OpenRouter API Key](https://openrouter.ai/) (For AI Assistant)
 
 ### Installation
 
@@ -55,14 +64,17 @@
    cd DukanDost-Pro-Website-Mobile-App
    ```
 
-2. **Automated VPS Setup (Production):**
-   Copy `scripts/setup_vps.sh` to your server and run:
-   ```bash
-   chmod +x setup_vps.sh
-   ./setup_vps.sh
+2. **Setup Environment Variables:**
+   Create a `.env` file in the `Backend` directory:
+   ```env
+   PORT=5000
+   MONGODB_URI=your_mongodb_uri
+   JWT_SECRET=your_secret
+   OPENROUTER_API_KEY=your_key
+   REDIS_URL=optional_redis_url
    ```
 
-3. **Local Setup:**
+3. **Install Dependencies:**
    ```bash
    # Backend
    cd Backend && npm install
@@ -84,14 +96,14 @@ npm run dev
 
 ## 🛡️ Production Readiness
 - **Backup**: Daily automated snapshots via `scripts/backup.ts`.
-- **Infrastructure**: Nginx reverse proxy with SSL termination (template in `nginx.conf.template`).
-- **CI/CD**: Fully automated pipeline in `.github/workflows/main.yml`.
-- **Maintenance**: Structured release cycle and rollback strategies in `MAINTENANCE.md`.
+- **Infrastructure**: Nginx reverse proxy with SSL termination.
+- **CI/CD**: Fully automated pipeline via GitHub Actions.
+- **Hardened**: All dashboard charts and data tables include optional-chaining to prevent frontend crashes.
 
 ---
 
 ## 🤝 Contributing
-Contributions, issues, and feature requests are welcome! Check the [Phase 3 Progress](./Phase_3_Progress.md) for current development status.
+Contributions, issues, and feature requests are welcome!
 
 ---
 
