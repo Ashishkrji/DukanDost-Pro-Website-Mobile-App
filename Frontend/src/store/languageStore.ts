@@ -49,6 +49,7 @@ const translations: Record<Language, any> = {
     ai: 'AI Intelligence',
     store: 'Online Store',
     vouchers: 'Vouchers',
+    loyalty: 'Loyalty Program',
     community: 'Community',
     subscription: 'Subscription',
     settings: 'Settings',
@@ -123,6 +124,7 @@ const translations: Record<Language, any> = {
     attendance: 'हाजिरी',
     salary: 'सैलरी',
     paySalary: 'सैलरी दें',
+    loyalty: 'लॉयल्टी प्रोग्राम',
   },
   bn: {
     dashboard: 'ড্যাশবোর্ড',

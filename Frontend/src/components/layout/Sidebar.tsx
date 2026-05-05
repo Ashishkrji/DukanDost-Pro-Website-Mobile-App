@@ -46,7 +46,8 @@ export default function Sidebar() {
       items: [
         { name: t('staff'), href: '/staff', icon: Users, badge: null },
         { name: t('ai'), href: '/ai', icon: Sparkles, badge: null },
-        { name: t('store'), href: '/store', icon: ShoppingBag, badge: null },
+        { name: 'Digital Dukan', href: '/store', icon: ShoppingBag, badge: null },
+        { name: t('loyalty'), href: '/loyalty', icon: Star, badge: 'PREMIUM' },
         { name: 'Marketing Campaigns', href: '/campaigns', icon: Megaphone, badge: 'BUSINESS' },
         { name: 'WhatsApp Reminders', href: '/reminders', icon: Bell, badge: 'PREMIUM' },
         { name: t('vouchers'), href: '/vouchers', icon: Gift, badge: null },

@@ -120,10 +120,22 @@ router.post('/', async (req: any, res) => {
       }
     }
 
-    // Update customer balance if it's a financial document
+    // Update customer balance & loyalty if it's a financial document
     if (customer && (type === 'INVOICE' || type === 'CREDIT_NOTE' || type === 'DEBIT_NOTE')) {
       const balanceChange = type === 'CREDIT_NOTE' ? -total : total;
       customer.balance = (customer.balance || 0) + balanceChange;
+      
+      // Update Loyalty Points (1 point per 100 Rs)
+      if (type === 'INVOICE') {
+        const pointsEarned = Math.floor(total / 100);
+        customer.loyaltyPoints = (customer.loyaltyPoints || 0) + pointsEarned;
+        
+        // Tier upgrade logic
+        if (customer.loyaltyPoints > 5000) customer.loyaltyTier = 'Platinum';
+        else if (customer.loyaltyPoints > 2000) customer.loyaltyTier = 'Gold';
+        else if (customer.loyaltyPoints > 500) customer.loyaltyTier = 'Silver';
+      }
+
       if (customer.balance > 0) customer.status = 'Udhaar';
       await customer.save();
     }

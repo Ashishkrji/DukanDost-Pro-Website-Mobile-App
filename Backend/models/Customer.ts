@@ -24,6 +24,10 @@ const customerSchema = new mongoose.Schema({
   lastTransactionDate: { type: Date },
   notes: { type: String },
   isActive: { type: Boolean, default: true },
+  
+  // Loyalty System
+  loyaltyPoints: { type: Number, default: 0 },
+  loyaltyTier: { type: String, enum: ['Bronze', 'Silver', 'Gold', 'Platinum'], default: 'Bronze' },
 }, { timestamps: true });
 
 // Ensure phone is unique PER USER
