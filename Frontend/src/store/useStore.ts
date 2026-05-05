@@ -606,6 +606,30 @@ export const useStore = create<AppState>()(
         } catch (error: any) { console.error('Failed to fetch analytics:', error); }
       },
 
+      generateEInvoice: async (id: string) => {
+        try {
+          const res = await api.generateEInvoice(id);
+          if (res.success) {
+            get().showToast('E-Invoice generated successfully!', 'success');
+            get().fetchInvoices('INVOICE');
+          }
+          return res;
+        } catch (error: any) {
+          get().showToast(error.response?.data?.message || 'E-Invoice generation failed', 'error');
+          return { success: false };
+        }
+      },
+
+      initiatePayment: async (amount: number, invoiceId?: string) => {
+        try {
+          const orderRes = await api.createRazorpayOrder({ amount, customerId: 'guest' });
+          return orderRes;
+        } catch (error: any) {
+          get().showToast('Payment initiation failed', 'error');
+          return null;
+        }
+      },
+
       // Warehouse (M6)
       fetchWarehouses: async (shopId) => {
         try {

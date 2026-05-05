@@ -137,9 +137,27 @@ export default function Billing({ type = 'INVOICE' }: BillingProps) {
                       <button 
                         onClick={() => generateInvoicePDF(inv)}
                         className="p-2 text-slate-400 hover:text-blue-600"
+                        title="Download PDF"
                       >
                         <FileText size={16} />
                       </button>
+                      
+                      {type === 'INVOICE' && inv.isGST && (
+                        inv.einvoiceDetails?.status === 'GENERATED' ? (
+                          <Badge status="success" className="bg-green-50 text-green-700 border-none font-black text-[9px] px-2 py-1">E-INVOICED</Badge>
+                        ) : (
+                          <button 
+                            onClick={() => {
+                              const { generateEInvoice } = useStore.getState();
+                              generateEInvoice(inv._id || inv.id);
+                            }}
+                            className="px-2 py-1 text-[9px] font-black uppercase tracking-widest bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                            title="Generate IRN"
+                          >
+                            Generate E-Invoice
+                          </button>
+                        )
+                      )}
                     </div>
                   </td>
                 </tr>

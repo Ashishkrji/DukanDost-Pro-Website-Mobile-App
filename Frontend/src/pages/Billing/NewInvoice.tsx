@@ -125,13 +125,21 @@ export default function NewInvoice({ type = 'INVOICE' }: { type?: string }) {
            <Card className="p-6">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Line Items</h3>
               <div className="space-y-4">
-                 {items.map((item, index) => (
-                    <div key={index} className="grid grid-cols-12 gap-3 p-4 bg-slate-50 rounded-2xl">
-                       <div className="col-span-6"><InputField label="Item" value={item.name} onChange={e => updateItem(index, 'name', e.target.value)} /></div>
+                  {items.map((item, index) => (
+                    <div key={index} className="grid grid-cols-12 gap-3 p-4 bg-slate-50 rounded-2xl relative group/item">
+                       <div className="col-span-5"><InputField label="Item Name" value={item.name} onChange={e => updateItem(index, 'name', e.target.value)} /></div>
                        <div className="col-span-2"><InputField label="Qty" type="number" value={item.qty} onChange={e => updateItem(index, 'qty', e.target.value)} /></div>
-                       <div className="col-span-4"><InputField label="Price" type="number" value={item.price} onChange={e => updateItem(index, 'price', e.target.value)} /></div>
+                       <div className="col-span-3"><InputField label="Price" type="number" value={item.price} onChange={e => updateItem(index, 'price', e.target.value)} /></div>
+                       {isGST && <div className="col-span-2"><InputField label="GST %" type="number" value={item.gstRate} onChange={e => updateItem(index, 'gstRate', e.target.value)} /></div>}
+                       
+                       <button 
+                         onClick={() => setItems(items.filter((_, i) => i !== index))}
+                         className="absolute -right-2 -top-2 w-6 h-6 bg-red-100 text-red-600 rounded-full flex items-center justify-center opacity-0 group-hover/item:opacity-100 transition-opacity"
+                       >
+                         <Trash2 size={12} />
+                       </button>
                     </div>
-                 ))}
+                  ))}
                  <Button variant="secondary" className="w-full border-dashed" onClick={() => setItems([...items, { name: '', qty: 1, price: 0, gstRate: 0, total: 0 }])}>+ Add Item</Button>
               </div>
            </Card>
