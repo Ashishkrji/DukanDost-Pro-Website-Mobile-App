@@ -74,19 +74,75 @@ export default function Store() {
           </div>
           <div className="p-12 text-center text-slate-400">
              <ShoppingBag className="mx-auto mb-4 opacity-20" size={48} />
-             <p className="font-bold">Sahi Orders Manage Karein</p>
-             <p className="text-xs">Abhi tak koi naya order nahi aaya hai.</p>
+             <p className="font-bold text-slate-900">Manage Store Orders</p>
+             <p className="text-xs">Abhi tak koi naya online order nahi aaya hai.</p>
+             <Button variant="secondary" className="mt-6" icon={<Share2 size={16} />} onClick={handleWhatsAppShare}>Promote Your Store</Button>
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-           {/* Catalog Preview Cards (Simulated) */}
-           <Card className="p-4 border-2 border-indigo-100 bg-indigo-50/20">
-              <div className="aspect-square bg-slate-200 rounded-xl mb-3" />
-              <p className="font-bold text-slate-900">Digital Catalog Preview</p>
-              <p className="text-xs text-slate-500">Grahak ko aisa dikhega aapka store.</p>
-              <Button variant="secondary" size="sm" className="w-full mt-4" icon={<Eye size={14} />}>Open Preview</Button>
+        <div className="space-y-6">
+           <Card className="p-5">
+              <div className="flex justify-between items-center mb-6">
+                 <h3 className="font-bold text-slate-900">Live Catalog Manager</h3>
+                 <div className="flex gap-2">
+                    <SearchInput placeholder="Search items..." className="w-64" />
+                    <Button variant="secondary" icon={<Filter size={16} />} />
+                 </div>
+              </div>
+              
+              <div className="overflow-x-auto">
+                 <table className="w-full">
+                    <thead className="bg-slate-50 border-b">
+                       <tr>
+                          <th className="px-4 py-3 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Product</th>
+                          <th className="px-4 py-3 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Price</th>
+                          <th className="px-4 py-3 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">Online Status</th>
+                          <th className="px-4 py-3 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                       </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                       {useStore.getState().products.slice(0, 5).map((p: any) => (
+                          <tr key={p._id}>
+                             <td className="px-4 py-4">
+                                <div className="flex items-center gap-3">
+                                   <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400"><Package size={20} /></div>
+                                   <div>
+                                      <p className="text-sm font-bold text-slate-900">{p.name}</p>
+                                      <p className="text-[10px] text-slate-500">{p.category}</p>
+                                   </div>
+                                </div>
+                             </td>
+                             <td className="px-4 py-4 text-right font-bold text-slate-900">₹{p.price}</td>
+                             <td className="px-4 py-4 text-center">
+                                <button className={cn(
+                                   "px-3 py-1 rounded-full text-[10px] font-black border transition-all",
+                                   p.isVisible ? "bg-green-50 text-green-600 border-green-200" : "bg-slate-100 text-slate-400 border-slate-200"
+                                )}>
+                                   {p.isVisible ? 'VISIBLE' : 'HIDDEN'}
+                                </button>
+                             </td>
+                             <td className="px-4 py-4 text-right">
+                                <Button variant="ghost" size="sm" icon={<Settings size={16} />} />
+                             </td>
+                          </tr>
+                       ))}
+                    </tbody>
+                 </table>
+              </div>
            </Card>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="p-6 bg-orange-50 border-orange-100">
+                 <h4 className="font-bold text-orange-900 flex items-center gap-2 mb-2"><Eye size={18} /> Storefront Preview</h4>
+                 <p className="text-xs text-orange-700 mb-4">Dekhiye aapka store grahak ko mobile par kaisa dikhta hai.</p>
+                 <Button className="w-full bg-orange-600 hover:bg-orange-700" onClick={() => window.open(`/store/${user?.id || 'demo'}`, '_blank')}>Open Customer View</Button>
+              </Card>
+              <Card className="p-6 bg-blue-50 border-blue-100">
+                 <h4 className="font-bold text-blue-900 flex items-center gap-2 mb-2"><CreditCard size={18} /> Payments Settings</h4>
+                 <p className="text-xs text-blue-700 mb-4">Apne UPI ya Razorpay details configure karein taaki online payment le sakein.</p>
+                 <Button className="w-full bg-blue-600 hover:bg-blue-700">Setup Payments</Button>
+              </Card>
+           </div>
         </div>
       )}
     </div>
