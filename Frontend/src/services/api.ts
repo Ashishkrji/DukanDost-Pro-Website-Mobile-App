@@ -222,6 +222,8 @@ export const getProfitabilityStats = (shopId?: string) =>
   api.get('/analytics/profitability', { params: { shopId } }).then(r => r.data);
 export const getTrends = (days?: number) => 
   api.get('/analytics/trends', { params: { days } }).then(r => r.data);
+export const getTopProductsStats = (limit?: number) => 
+  api.get('/analytics/top-products', { params: { limit } }).then(r => r.data);
 
 // ── Expenses ─────────────────────────────────────────────────
 export const getExpenses = (params?: { startDate?: string; endDate?: string; category?: string }) =>

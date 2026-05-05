@@ -189,4 +189,29 @@ router.get('/trends', async (req: any, res) => {
   }
 });
 
+// GET /api/analytics/top-products
+router.get('/top-products', async (req: any, res) => {
+  try {
+    const ownerId = req.ownerId;
+    const { limit = 5 } = req.query;
+
+    const topProducts = await Invoice.aggregate([
+      { $match: { userId: new mongoose.Types.ObjectId(ownerId), type: 'INVOICE' } },
+      { $unwind: '$items' },
+      { $group: {
+          _id: '$items.name',
+          totalQty: { $sum: '$items.qty' },
+          totalRevenue: { $sum: '$items.total' },
+          category: { $first: '$items.category' } // Note: ensure category is in items if needed
+      }},
+      { $sort: { totalRevenue: -1 } },
+      { $limit: Number(limit) }
+    ]);
+
+    res.json({ success: true, topProducts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Top products error', error });
+  }
+});
+
 export default router;

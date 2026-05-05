@@ -190,6 +190,7 @@ interface AppState {
     recovery: any;
     profitability: any[];
     trends: any[];
+    topProducts?: any[];
   };
 
   // UI State
@@ -584,13 +585,22 @@ export const useStore = create<AppState>()(
       fetchAnalytics: async () => {
         try {
           const shopId = get().currentShopId;
-          const [pl, recovery, profitability, trends] = await Promise.all([
+          const [pl, recovery, profitability, trends, topProducts] = await Promise.all([
             api.getPLStats(shopId),
             api.getRecoveryStats(shopId),
             api.getProfitabilityStats(shopId),
-            api.getTrends()
+            api.getTrends(),
+            api.getTopProductsStats(5)
           ]);
-          set({ analytics: { pl: pl.stats, recovery, profitability: profitability.profitability, trends: trends.trends } });
+          set({ 
+            analytics: { 
+              pl: pl.stats, 
+              recovery, 
+              profitability: profitability.profitability, 
+              trends: trends.trends,
+              topProducts: topProducts.topProducts
+            } 
+          });
         } catch (error: any) { console.error('Failed to fetch analytics:', error); }
       },
 
