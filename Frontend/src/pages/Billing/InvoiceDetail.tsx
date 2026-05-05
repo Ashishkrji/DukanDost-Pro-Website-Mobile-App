@@ -20,15 +20,28 @@ export default function InvoiceDetail() {
   const [invoice, setInvoice] = useState<any>(null);
   const [theme, setTheme] = useState<'CLASSIC' | 'MODERN' | 'PROFESSIONAL'>('MODERN');
 
+  const fetchInvoice = async () => {
+    try {
+      const res = await api.getInvoiceById(id!);
+      if (res.success) setInvoice(res.invoice);
+    } catch { showToast('Error loading invoice', 'error'); } finally { setLoading(false); }
+  };
+
   useEffect(() => {
-    const fetchInvoice = async () => {
-      try {
-        const res = await api.getInvoiceById(id!);
-        if (res.success) setInvoice(res.invoice);
-      } catch { showToast('Error loading invoice', 'error'); } finally { setLoading(false); }
-    };
     fetchInvoice();
   }, [id]);
+
+  const handleGenerateEInvoice = async () => {
+    try {
+      const res = await api.generateEInvoice(id!);
+      if (res.success) {
+        showToast('E-Invoice generated successfully!');
+        fetchInvoice();
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'E-Invoice generation failed', 'error');
+    }
+  };
 
   if (loading) return <div className="p-8 text-center animate-pulse">Loading bill...</div>;
   if (!invoice) return <div className="p-8 text-center">Invoice not found.</div>;
@@ -144,7 +157,7 @@ export default function InvoiceDetail() {
                  </div>
                  <div className="w-72 space-y-3">
                     <div className="flex justify-between text-sm text-slate-500"><span>Subtotal</span><span className="font-bold">₹{invoice.subtotal.toLocaleString()}</span></div>
-                    {invoice.isGST && <div className="flex justify-between text-sm text-slate-500"><span>GST (Total)</span><span className="font-bold">₹{invoice.taxAmount.toLocaleString()}</span></div>}
+                    {invoice.isGST && <div className="flex justify-between text-sm text-slate-500"><span>GST (Total)</span><span className="font-bold">₹{(invoice.totalGST || 0).toLocaleString()}</span></div>}
                     <div className={cn(
                       "flex justify-between text-2xl font-black p-4 rounded-xl mt-4",
                       theme === 'MODERN' ? "bg-orange-600 text-white shadow-lg shadow-orange-200" : "bg-slate-900 text-white"
@@ -154,6 +167,29 @@ export default function InvoiceDetail() {
                     </div>
                  </div>
               </div>
+
+              {/* E-Invoice IRN & QR */}
+              {invoice.einvoiceDetails?.status === 'GENERATED' && (
+                <div className="mt-8 pt-6 border-t border-dashed border-slate-200 flex justify-between items-end relative z-10">
+                  <div className="flex-1 pr-8">
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Invoice Reference Number (IRN)</p>
+                    <p className="text-[10px] font-mono break-all text-slate-600 bg-slate-50 p-2 rounded border border-slate-100">{invoice.einvoiceDetails.irn}</p>
+                    <div className="flex gap-4 mt-2">
+                       <div>
+                         <p className="text-[8px] font-black text-slate-400 uppercase">Ack No</p>
+                         <p className="text-[10px] font-bold">{invoice.einvoiceDetails.ackNumber}</p>
+                       </div>
+                       <div>
+                         <p className="text-[8px] font-black text-slate-400 uppercase">Ack Date</p>
+                         <p className="text-[10px] font-bold">{new Date(invoice.einvoiceDetails.ackDate).toLocaleDateString()}</p>
+                       </div>
+                    </div>
+                  </div>
+                  <div className="w-24 h-24 bg-white p-1 border border-slate-200 rounded-lg">
+                    <img src={invoice.einvoiceDetails.qrCode} alt="E-Invoice QR" className="w-full h-full" />
+                  </div>
+                </div>
+              )}
 
               {/* Watermark */}
               {isKacha && (
@@ -191,6 +227,24 @@ export default function InvoiceDetail() {
                     <CheckCircle2 size={18} />
                     <span className="text-[11px] font-bold uppercase tracking-wide">Digitally Signed</span>
                  </div>
+                 
+                 {invoice.isGST && (
+                   <div className={cn(
+                     "flex flex-col gap-3 p-3 rounded-xl border",
+                     invoice.einvoiceDetails?.status === 'GENERATED' ? "bg-purple-50 text-purple-700 border-purple-100" : "bg-slate-50 text-slate-700 border-slate-100"
+                   )}>
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 size={18} />
+                        <span className="text-[11px] font-bold uppercase tracking-wide">
+                          {invoice.einvoiceDetails?.status === 'GENERATED' ? 'E-Invoice Generated' : 'E-Invoice Pending'}
+                        </span>
+                      </div>
+                      {invoice.einvoiceDetails?.status !== 'GENERATED' && (
+                        <Button size="sm" className="w-full mt-1 h-8 text-[10px]" onClick={handleGenerateEInvoice}>Generate E-Invoice</Button>
+                      )}
+                   </div>
+                 )}
+
                  <div className={cn(
                    "flex items-center gap-3 p-3 rounded-xl border",
                    invoice.isGST ? "bg-blue-50 text-blue-700 border-blue-100" : "bg-amber-50 text-amber-700 border-amber-100"

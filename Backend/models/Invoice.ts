@@ -59,6 +59,16 @@ const invoiceSchema = new mongoose.Schema({
     lastGeneratedDate: { type: Date },
     status: { type: String, enum: ['Active', 'Paused', 'Ended'], default: 'Active' }
   },
+
+  // E-Invoice (M12)
+  einvoiceDetails: {
+    irn: { type: String },
+    ackNumber: { type: String },
+    ackDate: { type: String },
+    qrCode: { type: String }, // Base64 or URL
+    status: { type: String, enum: ['PENDING', 'GENERATED', 'CANCELLED', 'FAILED'], default: 'PENDING' },
+    error: { type: String }
+  }
 }, { timestamps: true });
 
 invoiceSchema.index({ userId: 1 });

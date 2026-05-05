@@ -219,4 +219,45 @@ router.post('/convert/:id', async (req: any, res) => {
   }
 });
 
+// POST generate e-invoice (M12)
+router.post('/:id/generate-einvoice', async (req: any, res) => {
+  try {
+    const ownerId = req.ownerId;
+    const invoice = await Invoice.findOne({ _id: req.params.id, userId: ownerId });
+
+    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+    if (!invoice.isGST) return res.status(400).json({ message: 'E-Invoice can only be generated for GST bills' });
+    if (invoice.einvoiceDetails?.status === 'GENERATED') {
+      return res.status(400).json({ message: 'E-Invoice already generated' });
+    }
+
+    // Mock NIC/IRP processing delay
+    // In real app, you'd call GST portal API here
+
+    // Generate Mock IRN (SHA-256 hash of invoice details)
+    const crypto = await import('crypto');
+    const irnData = `${invoice.invoiceNumber}${invoice.total}${ownerId}${Date.now()}`;
+    const irn = crypto.createHash('sha256').update(irnData).digest('hex');
+    
+    const ackNumber = Math.floor(Math.random() * 1000000000000).toString();
+    const ackDate = new Date().toISOString();
+    
+    // Mock QR Code (In real app, this is a signed string from IRP)
+    const qrCode = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(irn)}`;
+
+    invoice.einvoiceDetails = {
+      irn,
+      ackNumber,
+      ackDate,
+      qrCode,
+      status: 'GENERATED'
+    };
+
+    await invoice.save();
+    res.json({ success: true, message: 'E-Invoice generated successfully', einvoiceDetails: invoice.einvoiceDetails });
+  } catch (error) {
+    res.status(500).json({ message: 'E-Invoice generation failed', error });
+  }
+});
+
 export default router;

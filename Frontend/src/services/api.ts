@@ -91,6 +91,9 @@ export const shareInvoice = (id: string) =>
 export const convertDocument = (id: string, targetType: string) =>
   api.post(`/invoices/convert/${id}`, { targetType }).then(r => r.data);
 
+export const generateEInvoice = (id: string) =>
+  api.post(`/invoices/${id}/generate-einvoice`).then(r => r.data);
+
 
 // ── Products ────────────────────────────────────────────────
 export const getProducts = (params?: { category?: string; status?: string; search?: string }) =>

@@ -168,7 +168,7 @@ export default function CreditDebitNotes() {
               <div className="md:col-span-2">
                 <SelectField label="Product" value={currentItem.productId} onChange={e => {
                   const p = products.find((x:any) => x._id === e.target.value);
-                  setCurrentItem({...currentItem, productId: e.target.value, price: p?.salePrice || 0});
+                  setCurrentItem({...currentItem, productId: e.target.value, price: p?.price || 0});
                 }} options={products.map((p:any) => ({ value: p._id, label: p.name }))} />
               </div>
               <InputField label="Qty" type="number" value={currentItem.quantity} onChange={e => setCurrentItem({...currentItem, quantity: Number(e.target.value)})} />
