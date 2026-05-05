@@ -18,6 +18,10 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   res => res,
   err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('dd_token');
+      // window.location.href = '/login'; // Optional: force refresh or handle via state
+    }
     const msg = err?.response?.data?.message || err.message || 'Network error';
     console.warn('[API Error]', msg);
     return Promise.reject(err);
@@ -26,19 +30,19 @@ api.interceptors.response.use(
 
 // ── Customers ───────────────────────────────────────────────
 export const getCustomers = (params?: { search?: string; status?: string }) =>
-  api.get('/customers', { params }).then(r => r.data);
+  api.get('/customers/all', { params }).then(r => r.data);
 
 export const getCustomerById = (id: string) =>
   api.get(`/customers/${id}`).then(r => r.data);
 
 export const createCustomer = (data: any) =>
-  api.post('/customers', data).then(r => r.data);
+  api.post('/customers/create', data).then(r => r.data);
 
 export const updateCustomer = (id: string, data: any) =>
-  api.put(`/customers/${id}`, data).then(r => r.data);
+  api.put(`/customers/update/${id}`, data).then(r => r.data);
 
 export const deleteCustomer = (id: string) =>
-  api.delete(`/customers/${id}`).then(r => r.data);
+  api.delete(`/customers/delete/${id}`).then(r => r.data);
 
 export const getCustomerCreditScore = (id: string) =>
   api.get(`/customers/${id}/credit-score`).then(r => r.data);
@@ -46,7 +50,7 @@ export const getCustomerCreditScore = (id: string) =>
 export const getCustomerTransactions = (id: string) =>
   api.get(`/customers/${id}/transactions`).then(r => r.data);
 
-export const bulkRemindCustomers = (customerIds: string[]) =>
+export const sendBulkReminders = (customerIds: string[]) =>
   api.post('/customers/bulk/remind', { customerIds }).then(r => r.data);
 
 // ── Transactions ────────────────────────────────────────────
@@ -66,7 +70,7 @@ export const deleteTransaction = (id: string) =>
   api.delete(`/transactions/${id}`).then(r => r.data);
 
 // ── Invoices ────────────────────────────────────────────────
-export const getInvoices = (params?: { status?: string; search?: string }) =>
+export const getInvoices = (params?: { status?: string; search?: string; type?: string }) =>
   api.get('/invoices', { params }).then(r => r.data);
 
 export const getInvoiceById = (id: string) =>
@@ -83,6 +87,9 @@ export const deleteInvoice = (id: string) =>
 
 export const shareInvoice = (id: string) =>
   api.get(`/invoices/${id}/share`).then(r => r.data);
+
+export const convertDocument = (id: string, targetType: string) =>
+  api.post(`/invoices/convert/${id}`, { targetType }).then(r => r.data);
 
 
 // ── Products ────────────────────────────────────────────────
@@ -169,8 +176,10 @@ export const getKhataCustomers = (params?: { search?: string; status?: string })
 export const createKhataCustomer = (data: any) =>
   api.post('/customers/create', data).then(r => r.data);
 
-export const getLedgerEntries = (params: { customerId?: string; vendorId?: string }) =>
-  api.get('/ledger/history', { params }).then(r => r.data);
+export const getLedgerEntries = (params: string | { customerId?: string; vendorId?: string }) => {
+  const query = typeof params === 'string' ? { customerId: params } : params;
+  return api.get('/ledger/history', { params: query }).then(r => r.data);
+};
 
 export const createLedgerEntry = (data: any) =>
   api.post('/ledger/create', data).then(r => r.data);
@@ -211,6 +220,23 @@ export const getProfitabilityStats = (shopId?: string) =>
 export const getTrends = (days?: number) => 
   api.get('/analytics/trends', { params: { days } }).then(r => r.data);
 
+// ── Expenses ─────────────────────────────────────────────────
+export const getExpenses = (params?: { startDate?: string; endDate?: string; category?: string }) =>
+  api.get('/expenses', { params }).then(r => r.data);
+
+export const createExpense = (data: any) =>
+  api.post('/expenses/create', data).then(r => r.data);
+
+export const deleteExpense = (id: string) =>
+  api.delete(`/expenses/${id}`).then(r => r.data);
+
+// ── Tax Reports ──────────────────────────────────────────────
+export const generateGSTR1 = (month: number, year: number) =>
+  api.get('/tax/gstr-1', { params: { month, year } }).then(r => r.data);
+
+export const generateGSTR3B = (month: number, year: number) =>
+  api.get('/tax/gstr-3b', { params: { month, year } }).then(r => r.data);
+
 // ── Shops ────────────────────────────────────────────────────
 export const getShops = () =>
   api.get('/shops').then(r => r.data);
@@ -232,7 +258,7 @@ export const sendCampaign = (id: string) =>
 
 // ── AI Insights ──────────────────────────────────────────────
 export const getBusinessHealth = () => 
-  api.get('/ai-insights/health-score').then(r => r.data);
+  api.get('/ai/health-score').then(r => r.data);
 
 export const aiChat = (messages: any[]) =>
   api.post('/ai/chat', { messages }).then(r => r.data);
@@ -240,4 +266,44 @@ export const aiChat = (messages: any[]) =>
 export const aiExecute = (action: string, params: any) =>
   api.post('/ai/execute', { action, params }).then(r => r.data);
 
+// ── Warehouse (M6) ───────────────────────────────────────────
+export const getWarehouses = (shopId: string) => 
+  api.get(`/warehouses/${shopId}`).then(r => r.data);
+export const createWarehouse = (data: any) => 
+  api.post('/warehouses', data).then(r => r.data);
+export const transferStock = (data: { productId: string; fromWarehouseId: string; toWarehouseId: string; quantity: number }) => 
+  api.post('/warehouses/transfer', data).then(r => r.data);
+
+// ── Payroll (M7) ──────────────────────────────────────────────
+export const getPayrollHistory = (staffId: string) => 
+  api.get(`/payroll/${staffId}`).then(r => r.data);
+export const processSalary = (data: { staffId: string; month: number; year: number; paymentMode: string }) => 
+  api.post('/payroll/pay', data).then(r => r.data);
+
+// ── Advanced Reports (M10) ───────────────────────────────────
+export const getDayBook = (date: string) => 
+  api.get('/reports/day-book', { params: { date } }).then(r => r.data);
+export const getItemProfitReport = () => 
+  api.get('/reports/item-profit').then(r => r.data);
+export const getCashFlowSummary = () => 
+  api.get('/reports/cash-flow').then(r => r.data);
+
+export const createCAAccess = (data: { notes?: string; accessType?: string }) => 
+  api.post('/reports/ca-access', data).then(r => r.data);
+
+export const applyForLoan = (data: { amount: number; tenure: number; purpose: string }) =>
+  api.post('/loans/apply', data).then(r => r.data);
+
+export const getReturns = () => api.get('/returns').then(r => r.data);
+export const createReturn = (data: any) => api.post('/returns/create', data).then(r => r.data);
+
 export default api;
+// ── Public Store & Payments ────────────────────────────────
+export const getPublicCatalog = (shopId: string) =>
+  api.get(`/public/catalog/${shopId}`).then(r => r.data);
+
+export const createPublicOrder = (data: { amount: number; receipt: string }) =>
+  api.post('/public/payments/create-order', data).then(r => r.data);
+
+export const verifyPublicPayment = (data: any) =>
+  api.post('/public/payments/verify', data).then(r => r.data);

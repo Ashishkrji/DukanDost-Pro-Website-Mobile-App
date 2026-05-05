@@ -7,7 +7,18 @@ const staffSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   email: { type: String },
   salary: { type: Number, required: true },
-  hasAppAccess: { type: Boolean, default: false },
+  salaryType: { type: String, enum: ['Monthly', 'Daily', 'Weekly'], default: 'Monthly' },
+  salaryComponents: {
+    basic: Number,
+    hra: Number,
+    allowances: { type: Number, default: 0 },
+    deductions: { type: Number, default: 0 }
+  },
+  bankDetails: {
+    accountNumber: String,
+    ifsc: String,
+    bankName: String
+  },
   status: { type: String, enum: ['Active', 'On Leave', 'Resigned'], default: 'Active' },
   attendance: { type: String, enum: ['Aaya', 'Nahi Aaya', 'Pending'], default: 'Pending' },
   initials: { type: String }

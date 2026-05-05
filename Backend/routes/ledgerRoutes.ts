@@ -67,6 +67,11 @@ router.post('/create', async (req: any, res) => {
     if (customerId) target.lastTransactionDate = entry.date;
     await target.save();
 
+    // Automated Balance Sharing (M11)
+    if (customerId && req.body.shareOnWhatsApp) {
+      console.log(`[WhatsApp] To: ${target.phone} - "Aapka naya balance ₹${balanceAfterEntry} hai. Team DukanDost"`);
+    }
+
     res.status(201).json({ success: true, entry });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });

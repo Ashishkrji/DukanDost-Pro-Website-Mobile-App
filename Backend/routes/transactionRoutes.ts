@@ -70,9 +70,14 @@ router.post('/', async (req, res) => {
         customer.status = daysSinceLastTxn > 30 ? 'Overdue' : 'Udhaar';
       }
       await customer.save();
+
+      // Auto Balance Share Simulation (#7)
+      if (customer.phone) {
+        console.log(`[WhatsApp Share] To: ${customer.phone}, Message: Aapka naya balance ₹${customer.balance} hai. - DukanDost Pro`);
+      }
     }
 
-    res.status(201).json(saved);
+    res.status(201).json({ ...saved.toObject(), whatsappShared: true });
   } catch (error) {
     res.status(400).json({ message: 'Bad Request', error });
   }

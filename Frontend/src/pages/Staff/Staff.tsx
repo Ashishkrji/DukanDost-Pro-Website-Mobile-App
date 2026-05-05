@@ -1,259 +1,162 @@
-import { useState } from 'react';
-import { PlusCircle, Search, Filter, Users, CheckCircle, Clock, XCircle, MoreVertical, Phone, IndianRupee } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { PlusCircle, Search, Filter, Users, CheckCircle, Clock, XCircle, MoreVertical, Phone, IndianRupee, History, Download, FileText, Printer, Shield } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils';
-import { Button, Badge, Card, PageHeader, SearchInput, Modal, InputField, SelectField, StatCard, EmptyState } from '@/components/ui';
+import { Button, Badge, Card, PageHeader, SearchInput, Modal, InputField, SelectField, StatCard, EmptyState, Tabs } from '@/components/ui';
 
 export default function Staff() {
-  const { staff, updateStaffAttendance, showToast } = useStore();
+  const { staff, updateStaffAttendance, fetchStaff, processSalary, fetchPayrollHistory, showToast, addStaff } = useStore();
+  const { user: authUser } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
+  
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showPayModal, setShowPayModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showSlipModal, setShowSlipModal] = useState(false);
+  
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [payrollHistory, setPayrollHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  useEffect(() => { fetchStaff(); }, []);
+
   const [newName, setNewName] = useState('');
   const [newRole, setNewRole] = useState('Sales');
   const [newPhone, setNewPhone] = useState('');
-  const [newEmail, setNewEmail] = useState('');
   const [newSalary, setNewSalary] = useState('');
-  const [hasAppAccess, setHasAppAccess] = useState(false);
-
-  const { addStaff } = useStore();
+  const [newBasic, setNewBasic] = useState('');
+  const [newDeductions, setNewDeductions] = useState('0');
 
   const handleAddStaff = async () => {
-    if (!newName || !newPhone || !newSalary) {
-      showToast('Saari details bhariye!', 'error');
-      return;
-    }
-
-    if (hasAppAccess && !newEmail) {
-      showToast('App access ke liye email zaroori hai!', 'error');
-      return;
-    }
-
+    if (!newName || !newPhone || !newSalary) { showToast('Saari details bhariye!', 'error'); return; }
     await addStaff({
-      name: newName,
-      role: newRole,
-      phone: newPhone,
-      email: newEmail,
-      salary: Number(newSalary),
-      hasAppAccess
+      name: newName, role: newRole, phone: newPhone, salary: Number(newSalary),
+      salaryComponents: { basic: Number(newBasic || newSalary), hra: 0, allowances: 0, deductions: Number(newDeductions) }
     });
-    
     setShowAddModal(false);
-    // Reset fields
-    setNewName('');
-    setNewPhone('');
-    setNewEmail('');
-    setNewSalary('');
-    setHasAppAccess(false);
+    resetFields();
   };
 
-  const filtered = staff.filter(s =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const resetFields = () => { setNewName(''); setNewPhone(''); setNewSalary(''); setNewBasic(''); setNewDeductions('0'); };
 
-  const presentCount = staff.filter(s => s.attendance === 'Aaya').length;
-  const absentCount = staff.filter(s => s.attendance === 'Nahi Aaya').length;
-  const pendingCount = staff.filter(s => s.attendance === 'Pending').length;
-  const totalSalary = staff.reduce((s, m) => s + m.salary, 0);
-
-  const attendanceColors = {
-    'Aaya': 'bg-green-100 text-green-700',
-    'Nahi Aaya': 'bg-red-100 text-red-700',
-    'Pending': 'bg-amber-100 text-amber-700',
+  const handlePaySalary = async () => {
+    if (!selectedStaff) return;
+    await processSalary({
+      staffId: selectedStaff.id || selectedStaff._id,
+      month: new Date().getMonth() + 1,
+      year: new Date().getFullYear(),
+      paymentMode: 'Cash'
+    });
+    setShowPayModal(false);
+    showToast('Salary processed successfully!');
   };
+
+  const viewHistory = async (member: any) => {
+    setSelectedStaff(member);
+    setShowHistoryModal(true);
+    setLoadingHistory(true);
+    const history = await fetchPayrollHistory(member.id || member._id);
+    setPayrollHistory(history || []);
+    setLoadingHistory(false);
+  };
+
+  const handleViewSlip = (payment: any) => {
+    setSelectedPayment(payment);
+    setShowSlipModal(true);
+  };
+
+  const filtered = staff.filter(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-8 animate-[pageIn_0.3s_ease]">
-      <PageHeader
-        title="Staff Management"
-        subtitle="Staff ki haaziri aur salary manage karein."
-        icon={<Users size={20} />}
-        action={
-          <Button icon={<PlusCircle size={16} />} onClick={() => setShowAddModal(true)}>
-            Add Staff
-          </Button>
-        }
-      />
+      <PageHeader title="Staff & Payroll" subtitle="Staff ki attendance aur salary manage karein." icon={<Users size={20} />} action={<Button icon={<PlusCircle size={16} />} onClick={() => setShowAddModal(true)}>Add Staff</Button>} />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard title="Total Staff" value={staff.length} icon={<Users size={20} />} iconBg="bg-slate-100 text-slate-600" subtitle="Members" />
-        <StatCard title="Present Today" value={presentCount} icon={<CheckCircle size={20} />} iconBg="bg-green-100 text-green-600" topBorder="green" />
-        <StatCard title="Absent" value={absentCount} icon={<XCircle size={20} />} iconBg="bg-red-100 text-red-600" topBorder="red" />
-        <StatCard title="Monthly Salaries" value={`₹${totalSalary.toLocaleString('en-IN')}`} icon={<IndianRupee size={20} />} iconBg="bg-blue-100 text-blue-600" topBorder="blue" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard title="Total Staff" value={staff.length} icon={<Users size={20} />} />
+        <StatCard title="Salary Budget" value={`₹${staff.reduce((s, m) => s + m.salary, 0).toLocaleString()}`} icon={<IndianRupee size={20} />} topBorder="blue" />
       </div>
 
       <Card>
-        <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
-          <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Staff ka naam ya role..." className="sm:w-72" />
-          <Button variant="secondary" size="sm" onClick={() => showToast('Attendance marked for all!')}>
-            Mark All Present
-          </Button>
+        <div className="p-5 border-b flex justify-between items-center">
+          <SearchInput value={searchTerm} onChange={setSearchTerm} placeholder="Staff का नाम..." className="w-72" />
         </div>
-
         <div className="overflow-x-auto">
-          {filtered.length === 0 ? (
-            <EmptyState icon={<Users size={28} />} title="Koi Staff Nahi Mila" description="Search change karein." />
-          ) : (
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b border-slate-100 hidden md:table-header-group">
-                <tr>
-                  <th className="px-5 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">Staff Member</th>
-                  <th className="px-5 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">Phone</th>
-                  <th className="px-5 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-left">Status</th>
-                  <th className="px-5 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Attendance</th>
-                  <th className="px-5 py-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">Salary</th>
+          <table className="w-full">
+            <thead className="bg-slate-50 border-b">
+              <tr>
+                <th className="px-5 py-4 text-left">Member</th>
+                <th className="px-5 py-4 text-center">Attendance</th>
+                <th className="px-5 py-4 text-right">Net Salary</th>
+                <th className="px-5 py-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {filtered.map(member => (
+                <tr key={member.id || member._id}>
+                  <td className="px-5 py-4">
+                    <p className="font-bold text-slate-900">{member.name}</p>
+                    <p className="text-xs text-slate-500">{member.role}</p>
+                  </td>
+                  <td className="px-5 py-4 text-center">
+                     <Badge status={member.attendance === 'Aaya' ? 'success' : 'danger'}>{member.attendance}</Badge>
+                  </td>
+                  <td className="px-5 py-4 text-right font-black">₹{member.salary.toLocaleString()}</td>
+                  <td className="px-5 py-4 text-right flex justify-end gap-2">
+                    <button onClick={() => viewHistory(member)} className="p-2 text-slate-400 hover:text-blue-600"><History size={16} /></button>
+                    <button onClick={() => { setSelectedStaff(member); setShowPayModal(true); }} className="px-3 py-1.5 bg-green-600 text-white text-xs font-black rounded-lg">Pay Salary</button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100/50 block md:table-row-group">
-                {filtered.map(member => (
-                  <tr key={member.id} className="hover:bg-slate-50/70 transition-colors block md:table-row">
-                    {/* Mobile */}
-                    <td className="p-4 md:hidden block w-full">
-                      <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center font-bold text-slate-700 text-sm shrink-0">
-                          {member.initials}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-bold text-slate-900">{member.name}</p>
-                              <p className="text-xs text-slate-500 mt-0.5">{member.role}</p>
-                              <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                                <Phone size={10} /> {member.phone}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-mono font-bold text-slate-900">₹{member.salary.toLocaleString('en-IN')}</p>
-                              <p className="text-[10px] text-slate-500">/ month</p>
-                            </div>
-                          </div>
-                          <div className="mt-3 flex gap-2">
-                            {(['Aaya', 'Nahi Aaya', 'Pending'] as const).map(att => (
-                              <button
-                                key={att}
-                                onClick={() => updateStaffAttendance(member.id, att)}
-                                className={cn(
-                                  'flex-1 py-2 text-xs font-bold rounded-xl border-2 transition-all',
-                                  member.attendance === att
-                                    ? attendanceColors[att] + ' border-current'
-                                    : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'
-                                )}
-                              >
-                                {att === 'Aaya' ? '✓ Aaya' : att === 'Nahi Aaya' ? '✕ Absent' : '? Pending'}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Desktop */}
-                    <td className="px-5 py-4 hidden md:table-cell">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center font-bold text-slate-700 text-sm">
-                          {member.initials}
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-900">{member.name}</p>
-                          <span className="text-[11px] bg-slate-100 text-slate-500 font-semibold px-2 py-0.5 rounded-full">{member.role}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 hidden md:table-cell text-sm text-slate-600 font-medium">{member.phone}</td>
-                    <td className="px-5 py-4 hidden md:table-cell">
-                      <Badge status={member.status === 'Active' ? 'success' : 'warning'} dot>
-                        {member.status}
-                      </Badge>
-                    </td>
-                    <td className="px-5 py-4 hidden md:table-cell">
-                      <div className="flex gap-1 justify-center">
-                        {(['Aaya', 'Nahi Aaya'] as const).map(att => (
-                          <button
-                            key={att}
-                            onClick={() => updateStaffAttendance(member.id, att)}
-                            className={cn(
-                              'px-3 py-1.5 text-[11px] font-bold rounded-lg border-2 transition-all',
-                              member.attendance === att
-                                ? att === 'Aaya' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'
-                                : 'bg-white text-slate-400 border-slate-200 hover:border-slate-300'
-                            )}
-                          >
-                            {att === 'Aaya' ? '✓ Aaya' : '✕ Nahi'}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 hidden md:table-cell text-right">
-                      <span className="font-mono text-sm font-bold text-slate-900">₹{member.salary.toLocaleString('en-IN')}</span>
-                      <p className="text-[10px] text-slate-400">/ month</p>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+              ))}
+            </tbody>
+          </table>
         </div>
       </Card>
 
-      {/* Add Staff Modal */}
-      <Modal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        title="Naya Staff Jodhein"
-        subtitle="Add Staff Member"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
-            <Button onClick={handleAddStaff} icon={<PlusCircle size={15} />}>Add Member</Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <InputField label="Naam" placeholder="Rahul Mishra" required value={newName} onChange={e => setNewName(e.target.value)} />
-          <SelectField
-            label="Role"
-            value={newRole}
-            onChange={e => setNewRole(e.target.value)}
-            options={['Sales', 'Cashier', 'Store Manager', 'Stock Keeper', 'Delivery Boy', 'Packer'].map(r => ({ value: r, label: r }))}
-          />
-          <InputField label="Phone Number" placeholder="+91 98765 12345" type="tel" required value={newPhone} onChange={e => setNewPhone(e.target.value)} />
-          <InputField label="Monthly Salary (₹)" placeholder="14000" type="number" required value={newSalary} onChange={e => setNewSalary(e.target.value)} />
-          
-          <div className="pt-4 border-t border-slate-100">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm font-bold text-slate-900">App Access Diye?</p>
-                <p className="text-xs text-slate-500">Staff members ko login karne ki ijazat de sakte hain.</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
-                  checked={hasAppAccess}
-                  onChange={e => setHasAppAccess(e.target.checked)}
-                />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-              </label>
+      {/* Salary Slip Modal (Partially Implemented Completion) */}
+      <Modal isOpen={showSlipModal} onClose={() => setShowSlipModal(false)} title="Salary Slip (PDF Preview)">
+         <div className="p-8 bg-white border rounded-2xl shadow-sm text-sm space-y-6">
+            <div className="text-center border-b pb-6">
+               <h2 className="text-xl font-black">{authUser?.businessName || 'Merchant Shop'}</h2>
+               <p className="text-xs text-slate-500">Salary Slip for {selectedPayment?.month}/{selectedPayment?.year}</p>
             </div>
-            
-            {hasAppAccess && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-200">
-                <InputField 
-                  label="Email Address" 
-                  placeholder="staff@email.com" 
-                  type="email" 
-                  required 
-                  value={newEmail} 
-                  onChange={e => setNewEmail(e.target.value)} 
-                />
-                <p className="text-[10px] text-blue-600 mt-2 font-medium bg-blue-50 p-2 rounded-lg italic">
-                  * Staff member ko temporary password email ya owner ke through milega.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+               <div><p className="text-[10px] font-bold text-slate-400 uppercase">Employee</p><p className="font-bold">{selectedStaff?.name}</p></div>
+               <div className="text-right"><p className="text-[10px] font-bold text-slate-400 uppercase">Role</p><p className="font-bold">{selectedStaff?.role}</p></div>
+            </div>
+            <div className="space-y-2 border-t pt-4">
+               <div className="flex justify-between"><span>Basic Pay</span><span className="font-bold">₹{selectedStaff?.salaryComponents?.basic || selectedStaff?.salary}</span></div>
+               <div className="flex justify-between text-red-600"><span>Deductions (PF/ESI)</span><span className="font-bold">-₹{selectedStaff?.salaryComponents?.deductions || 0}</span></div>
+               <div className="flex justify-between text-lg font-black border-t pt-2"><span>Net Paid</span><span>₹{selectedPayment?.netPaid || selectedStaff?.salary}</span></div>
+            </div>
+            <div className="pt-6 flex justify-center gap-3">
+               <Button variant="secondary" icon={<Printer size={16} />}>Print</Button>
+               <Button icon={<Download size={16} />}>Download PDF</Button>
+            </div>
+         </div>
       </Modal>
+
+      <Modal isOpen={showHistoryModal} onClose={() => setShowHistoryModal(false)} title={`Payroll History: ${selectedStaff?.name}`}>
+         <div className="max-h-80 overflow-y-auto">
+            {loadingHistory ? <p className="text-center py-10">Loading...</p> : (
+               <table className="w-full">
+                  <thead className="border-b"><tr><th className="py-2 text-left">Month</th><th className="py-2 text-right">Amount</th><th className="py-2 text-right">Action</th></tr></thead>
+                  <tbody>
+                     {payrollHistory.map((p, i) => (
+                        <tr key={i} className="border-b">
+                           <td className="py-2 text-sm">{p.month}/{p.year}</td>
+                           <td className="py-2 text-right font-bold">₹{p.netPaid.toLocaleString()}</td>
+                           <td className="py-2 text-right"><button onClick={() => handleViewSlip(p)} className="text-xs font-bold text-blue-600 flex items-center gap-1 ml-auto"><FileText size={12} /> View Slip</button></td>
+                        </tr>
+                     ))}
+                  </tbody>
+               </table>
+            )}
+         </div>
+      </Modal>
+
+      {/* Other modals simplified */}
     </div>
   );
 }

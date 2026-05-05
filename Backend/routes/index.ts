@@ -21,6 +21,14 @@ import shopRoutes from './shopRoutes.ts';
 import whatsappRoutes from './whatsappRoutes.ts';
 import campaignRoutes from './campaignRoutes.ts';
 import aiRoutes from './aiRoutes.ts';
+import expenseRoutes from './expenseRoutes.ts';
+import taxRoutes from './taxRoutes.ts';
+import warehouseRoutes from './warehouseRoutes.ts';
+import payrollRoutes from './payrollRoutes.ts';
+import reportRoutes from './reportRoutes.ts';
+import publicRoutes from './publicRoutes.ts';
+import loanRoutes from './loanRoutes.ts';
+import returnRoutes from './returnRoutes.ts';
 
 const router = express.Router();
 
@@ -45,6 +53,14 @@ router.use('/analytics', analyticsRoutes);
 router.use('/shops', shopRoutes);
 router.use('/whatsapp', whatsappRoutes);
 router.use('/campaigns', campaignRoutes);
-router.use('/ai-insights', aiRoutes);
+router.use('/ai', aiRoutes);
+router.use('/expenses', expenseRoutes);
+router.use('/tax', taxRoutes);
+router.use('/warehouses', warehouseRoutes);
+router.use('/payroll', payrollRoutes);
+router.use('/reports', reportRoutes);
+router.use('/public', publicRoutes);
+router.use('/loans', loanRoutes);
+router.use('/returns', returnRoutes);
 
 export default router;

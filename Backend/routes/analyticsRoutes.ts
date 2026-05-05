@@ -49,8 +49,13 @@ router.get('/pl', async (req: any, res) => {
       if (entry.transactionType === 'Payment Diya') stats.cashOut += entry.amount;
     });
 
+    // Calculate GST Liability from Invoices
+    const invoices = await Invoice.find({ userId: ownerId, isGST: true, ... (shopId && shopId !== 'all' ? { shopId } : {}) });
+    const totalTax = invoices.reduce((sum, inv) => sum + ((inv as any).totalGST || 0), 0);
+
     // Simple P&L: Sales - Purchases
     stats.netProfit = stats.totalSales - stats.totalPurchases;
+    (stats as any).totalTax = totalTax;
 
     await cacheService.set(cacheKey, stats, 300); // 5 min cache
 

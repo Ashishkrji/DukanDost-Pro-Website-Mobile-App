@@ -11,6 +11,7 @@ interface User {
   upiId?: string;
   phone?: string;
   address?: string;
+  GSTIN?: string;
   plan: 'Starter' | 'Pro' | 'Business';
 }
 
@@ -37,7 +38,13 @@ interface AuthState {
   updateUserProfile: (data: Partial<User>) => Promise<void>;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = '/api';
+
+// Sync token with axios defaults on load
+const token = JSON.parse(localStorage.getItem('dukandost-auth') || '{}')?.state?.token;
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -51,8 +58,9 @@ export const useAuthStore = create<AuthState>()(
 
       setAuth: (user, token) => {
         set({ user, token, isAuthenticated: true, error: null, isLoading: false });
-        // Set axios default header
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        // Also sync with api.ts's expected key
+        localStorage.setItem('dd_token', token);
       },
 
       setUser: (user) => set({ user }),
@@ -62,7 +70,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         set({ user: null, subscriptionDetails: null, token: null, isAuthenticated: false, error: null });
         delete axios.defaults.headers.common['Authorization'];
-        // Optional: Call backend logout
+        localStorage.removeItem('dd_token');
         axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true }).catch(() => {});
       },
 

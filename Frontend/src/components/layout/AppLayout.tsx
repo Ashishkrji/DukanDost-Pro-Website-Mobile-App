@@ -10,13 +10,13 @@ import FloatingChatbot from '../ai/FloatingChatbot';
 import { useEffect } from 'react';
 
 export default function AppLayout() {
-  const { isAuthenticated, fetchProfile } = useAuthStore();
+  const { user, isAuthenticated, fetchProfile } = useAuthStore();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !user) {
       fetchProfile();
     }
-  }, [isAuthenticated, fetchProfile]);
+  }, [isAuthenticated, user, fetchProfile]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;

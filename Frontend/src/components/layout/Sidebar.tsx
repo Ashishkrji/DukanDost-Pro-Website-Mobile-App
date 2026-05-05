@@ -8,7 +8,7 @@ import {
   LayoutDashboard, BookOpen, ReceiptText, Package, QrCode,
   Users, Sparkles, ShoppingBag, MessageSquare, Settings,
   LogOut, PlusCircle, Gift, Star, BarChart3, X, Store,
-  ChevronRight, Bell, Lock, Shield, Truck, Megaphone
+  ChevronRight, Bell, Lock, Shield, Truck, Megaphone, TrendingDown, FileQuestion, ArrowLeftRight
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -26,6 +26,10 @@ export default function Sidebar() {
         { name: t('khata'), href: '/khata', icon: BookOpen, badge: null },
         { name: t('vendors'), href: '/vendors', icon: Truck, badge: null },
         { name: t('invoices'), href: '/invoices', icon: ReceiptText, badge: null },
+        { name: 'Quotations', href: '/quotations', icon: FileQuestion, badge: null },
+        { name: 'Purchases (PO)', href: '/purchase-orders', icon: Truck, badge: null },
+        { name: 'Returns', href: '/returns', icon: ArrowLeftRight, badge: null },
+        { name: 'Daily Expenses', href: '/expenses', icon: TrendingDown, badge: null },
         { name: t('inventory'), href: '/inventory', icon: Package, badge: null },
       ]
     },
@@ -33,6 +37,7 @@ export default function Sidebar() {
       label: 'PAYMENTS',
       items: [
         { name: t('payments'), href: '/payments', icon: QrCode, badge: null },
+        { name: 'Business Loans', href: '/loans', icon: Shield, badge: 'NEW' },
         { name: t('reports'), href: '/reports', icon: BarChart3, badge: null },
       ]
     },

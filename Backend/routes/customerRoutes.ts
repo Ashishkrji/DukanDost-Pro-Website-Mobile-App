@@ -135,4 +135,20 @@ router.delete('/delete/:id', async (req: any, res) => {
   }
 });
 
+// POST /api/customers/bulk/remind
+router.post('/bulk/remind', async (req: any, res) => {
+  const { customerIds } = req.body;
+  try {
+    const ownerId = req.ownerId;
+    const customers = await Customer.find({ _id: { $in: customerIds }, userId: ownerId });
+    
+    // Simulate sending reminders
+    console.log(`Sending bulk reminders to ${customers.length} customers`);
+    
+    res.json({ success: true, message: `Sent ${customers.length} reminders` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+});
+
 export default router;

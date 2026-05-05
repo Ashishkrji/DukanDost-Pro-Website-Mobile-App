@@ -28,8 +28,13 @@ import DigitalKhata from './pages/DigitalKhata/DigitalKhata';
 import CustomerLedger from './pages/DigitalKhata/CustomerLedger';
 import { Vendors, VendorDetail } from './pages/Vendors';
 import Campaigns from './pages/Campaigns/Campaigns';
+import Loans from './pages/Fintech/Loans';
+import CreditDebitNotes from './pages/Returns/CreditDebitNotes';
 
 import NewInvoice from './pages/Billing/NewInvoice';
+import InvoiceDetail from './pages/Billing/InvoiceDetail';
+import PublicStore from './pages/Store/PublicStore';
+import Expenses from './pages/Accounting/Expenses';
 
 
 // Footer & Info Pages
@@ -56,9 +61,23 @@ import Compliance from './pages/compliance/compliance';
 import Integrations from './pages/integrations/integrations';
 import ClickSpark from './components/ui/ClickSpark/ClickSpark';
 import SplashCursor from './components/ui/SplashCursor/SplashCursor';
-
+import { registerSW } from 'virtual:pwa-register';
+import { useEffect } from 'react';
 
 export default function App() {
+  useEffect(() => {
+    registerSW({
+      onNeedRefresh() {
+        if (confirm('Nayi update available hai. Refresh karein?')) {
+          window.location.reload();
+        }
+      },
+      onOfflineReady() {
+        console.log('App offline mode ke liye taiyar hai!');
+      },
+    });
+  }, []);
+
   return (
     <ClickSpark
       sparkColor='#FF6B00'
@@ -77,6 +96,7 @@ export default function App() {
         <Route path="/success" element={<Success />} />
         <Route path="/payment-failure" element={<PaymentFailure />} />
         <Route path="/verify-otp" element={<OTPVerify />} />
+        <Route path="/store/:shopId" element={<PublicStore />} />
 
         {/* Info & Legal Routes */}
         <Route path="/about" element={<About />} />
@@ -113,9 +133,22 @@ export default function App() {
           <Route path="/dashboard/digital-khata" element={<DigitalKhata />} />
           <Route path="/dashboard/digital-khata/:id" element={<CustomerLedger />} />
 
-          {/* Invoices */}
-          <Route path="/invoices" element={<Billing />} />
-          <Route path="/invoices/new" element={<NewInvoice />} />
+          {/* Invoices & Sales Documents */}
+          <Route path="/invoices" element={<Billing type="INVOICE" />} />
+          <Route path="/invoices/new" element={<NewInvoice type="INVOICE" />} />
+          <Route path="/invoices/:id" element={<InvoiceDetail />} />
+          
+          <Route path="/quotations" element={<Billing type="QUOTATION" />} />
+          <Route path="/quotations/new" element={<NewInvoice type="QUOTATION" />} />
+          
+          <Route path="/challans" element={<Billing type="CHALLAN" />} />
+          <Route path="/challans/new" element={<NewInvoice type="CHALLAN" />} />
+          
+          <Route path="/purchase-orders" element={<Billing type="PURCHASE_ORDER" />} />
+          <Route path="/purchase-orders/new" element={<NewInvoice type="PURCHASE_ORDER" />} />
+
+          <Route path="/returns" element={<CreditDebitNotes />} />
+          <Route path="/returns/new" element={<NewInvoice type="CREDIT_NOTE" />} />
 
           {/* Inventory */}
           <Route path="/inventory" element={<Inventory />} />
@@ -125,6 +158,8 @@ export default function App() {
 
           {/* Staff */}
           <Route path="/staff" element={<Staff />} />
+          <Route path="/loans" element={<Loans />} />
+          <Route path="/expenses" element={<Expenses />} />
 
           {/* AI */}
           <Route path="/ai" element={<AI />} />

@@ -6,14 +6,16 @@ import { checkFeatureAccess } from '../middleware/planMiddleware';
 
 const router = express.Router();
 
-// GET all invoices
+// GET all documents by type
 router.get('/', async (req: any, res) => {
   try {
     const ownerId = req.ownerId;
-    const { status, customerId, search } = req.query;
-    const query: any = { userId: ownerId };
+    const { status, customerId, vendorId, search, type = 'INVOICE' } = req.query;
+    const query: any = { userId: ownerId, type };
+    
     if (status && status !== 'All') query.status = status;
     if (customerId) query.customerId = customerId;
+    if (vendorId) query.vendorId = vendorId;
     if (search) {
       query.$or = [
         { invoiceNumber: { $regex: search, $options: 'i' } },
@@ -22,6 +24,7 @@ router.get('/', async (req: any, res) => {
     }
     const invoices = await Invoice.find(query)
       .populate('customerId', 'name phone')
+      .populate('vendorId', 'name phone')
       .sort({ createdAt: -1 });
     res.json(invoices);
   } catch (error) {
@@ -29,11 +32,13 @@ router.get('/', async (req: any, res) => {
   }
 });
 
-// GET single invoice
+// GET single document
 router.get('/:id', async (req: any, res) => {
   try {
     const ownerId = req.ownerId;
-    const invoice = await Invoice.findOne({ _id: req.params.id, userId: ownerId }).populate('customerId');
+    const invoice = await Invoice.findOne({ _id: req.params.id, userId: ownerId })
+      .populate('customerId')
+      .populate('vendorId');
     if (!invoice) return res.status(404).json({ message: 'Not found' });
     res.json(invoice);
   } catch (error) {
@@ -41,11 +46,11 @@ router.get('/:id', async (req: any, res) => {
   }
 });
 
-// POST create invoice
+// POST create document
 router.post('/', async (req: any, res) => {
   try {
     const ownerId = req.ownerId;
-    const { customerId, items, discount = 0, dueDate, notes, isGST } = req.body;
+    const { customerId, vendorId, items, discount = 0, dueDate, notes, isGST, type = 'INVOICE' } = req.body;
 
     // Plan check for GST
     if (isGST) {
@@ -59,7 +64,7 @@ router.post('/', async (req: any, res) => {
       }
     }
 
-    const customer = await Customer.findOne({ _id: customerId, userId: ownerId });
+    const customer = customerId ? await Customer.findOne({ _id: customerId, userId: ownerId }) : null;
 
     // Calculate totals
     let subtotal = 0;
@@ -77,6 +82,8 @@ router.post('/', async (req: any, res) => {
     const invoice = new Invoice({
       userId: ownerId,
       customerId,
+      vendorId,
+      type,
       customerName: customer?.name || req.body.customerName,
       customerPhone: customer?.phone || req.body.customerPhone,
       customerGSTIN: customer?.gstNumber,
@@ -92,22 +99,32 @@ router.post('/', async (req: any, res) => {
 
     const saved = await invoice.save();
 
-    // Deduct Stock from Inventory
-    for (const item of items) {
-      if (item.productId) {
-        await Product.findOneAndUpdate(
-          { _id: item.productId, userId: ownerId },
-          { $inc: { stock: -Number(item.qty) } }
-        );
+    // Deduct/Add Stock based on type
+    if (type === 'INVOICE' || type === 'CHALLAN' || type === 'DEBIT_NOTE') {
+      for (const item of items) {
+        if (item.productId) {
+          await Product.findOneAndUpdate(
+            { _id: item.productId, userId: ownerId },
+            { $inc: { stock: -Number(item.qty) } }
+          );
+        }
+      }
+    } else if (type === 'CREDIT_NOTE') {
+      for (const item of items) {
+        if (item.productId) {
+          await Product.findOneAndUpdate(
+            { _id: item.productId, userId: ownerId },
+            { $inc: { stock: Number(item.qty) } }
+          );
+        }
       }
     }
 
-    // Update customer balance (invoice adds to what they owe)
-    if (customer) {
-      customer.balance = (customer.balance || 0) + total;
-      if (customer.balance > 0) {
-        customer.status = 'Udhaar';
-      }
+    // Update customer balance if it's a financial document
+    if (customer && (type === 'INVOICE' || type === 'CREDIT_NOTE' || type === 'DEBIT_NOTE')) {
+      const balanceChange = type === 'CREDIT_NOTE' ? -total : total;
+      customer.balance = (customer.balance || 0) + balanceChange;
+      if (customer.balance > 0) customer.status = 'Udhaar';
       await customer.save();
     }
 
@@ -117,15 +134,15 @@ router.post('/', async (req: any, res) => {
   }
 });
 
-// PUT update invoice status (mark paid, overdue, etc.)
+// PUT update document status
 router.put('/:id', async (req: any, res) => {
   try {
     const ownerId = req.ownerId;
     const { status } = req.body;
     const updateData: any = { ...req.body };
+    
     if (status === 'PAID') {
       updateData.paidDate = new Date();
-      // Update customer balance
       const invoice = await Invoice.findOne({ _id: req.params.id, userId: ownerId });
       if (invoice && invoice.status !== 'PAID') {
         await Customer.findOneAndUpdate({ _id: invoice.customerId, userId: ownerId }, {
@@ -133,6 +150,7 @@ router.put('/:id', async (req: any, res) => {
         });
       }
     }
+    
     const updated = await Invoice.findOneAndUpdate({ _id: req.params.id, userId: ownerId }, updateData, {
       new: true, runValidators: true,
     });
@@ -143,19 +161,19 @@ router.put('/:id', async (req: any, res) => {
   }
 });
 
-// DELETE invoice
+// DELETE document
 router.delete('/:id', async (req: any, res) => {
   try {
     const ownerId = req.ownerId;
     const deleted = await Invoice.findOneAndDelete({ _id: req.params.id, userId: ownerId });
     if (!deleted) return res.status(404).json({ message: 'Not found' });
-    res.json({ message: 'Invoice deleted' });
+    res.json({ message: 'Document deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error });
   }
 });
 
-// GET sharing link/text
+// GET sharing link
 router.get('/:id/share', async (req: any, res) => {
   try {
     const ownerId = req.ownerId;
@@ -163,21 +181,42 @@ router.get('/:id/share', async (req: any, res) => {
     if (!invoice) return res.status(404).json({ message: 'Not found' });
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const shareUrl = `${frontendUrl}/view-invoice/${invoice._id}`;
+    const shareUrl = `${frontendUrl}/view-document/${invoice._id}`;
     
-    const message = `Hello ${invoice.customerName}, your invoice ${invoice.invoiceNumber} from DukanDost is ready. Total: ₹${invoice.total}. View it here: ${shareUrl}`;
+    const message = `Hello ${invoice.customerName}, your ${invoice.type.toLowerCase()} ${invoice.invoiceNumber} is ready. Total: ₹${invoice.total}. View it here: ${shareUrl}`;
     const whatsappUrl = `https://wa.me/${invoice.customerPhone?.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
 
-    res.json({
-      success: true,
-      message,
-      shareUrl,
-      whatsappUrl
-    });
+    res.json({ success: true, message, shareUrl, whatsappUrl });
   } catch (error) {
     res.status(500).json({ message: 'Server Error', error });
   }
 });
 
-export default router;
+// POST convert document
+router.post('/convert/:id', async (req: any, res) => {
+  try {
+    const ownerId = req.ownerId;
+    const { targetType } = req.body;
+    
+    const sourceDoc = await Invoice.findOne({ _id: req.params.id, userId: ownerId });
+    if (!sourceDoc) return res.status(404).json({ message: 'Source not found' });
 
+    const newDoc = new Invoice({
+      ...sourceDoc.toObject(),
+      _id: undefined,
+      type: targetType,
+      invoiceNumber: undefined,
+      originalDocumentId: sourceDoc._id,
+      status: targetType === 'INVOICE' ? 'UNPAID' : 'PENDING',
+      createdAt: undefined,
+      updatedAt: undefined
+    });
+
+    const saved = await newDoc.save();
+    res.json(saved);
+  } catch (error) {
+    res.status(500).json({ message: 'Conversion failed', error });
+  }
+});
+
+export default router;

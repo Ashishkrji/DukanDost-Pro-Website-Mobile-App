@@ -20,6 +20,18 @@ const productSchema = new mongoose.Schema({
     enum: ['IN STOCK', 'LOW STOCK', 'OUT OF STOCK'],
     default: 'IN STOCK',
   },
+  batches: [{
+    batchNumber: String,
+    expiryDate: Date,
+    quantity: Number,
+    mrp: Number
+  }],
+  warehouseStocks: [{
+    warehouseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Warehouse' },
+    quantity: { type: Number, default: 0 }
+  }],
+  trackSerialNumbers: { type: Boolean, default: false },
+  serialNumbers: [String], // for warranty tracking
 }, { timestamps: true });
 
 // Auto-update status based on stock

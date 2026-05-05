@@ -5,21 +5,23 @@ import { useAuthStore } from '@/store/authStore';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { Toast, Badge, Button } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { useLanguageStore } from '@/store/languageStore';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 const pageTitles: Record<string, string> = {
-  '/dashboard': '🏠 Dashboard',
-  '/khata': '📒 Digital Khata',
-  '/invoices': '📄 Invoices & Billing',
-  '/inventory': '📦 Inventory',
-  '/payments': '💳 Payments & QR',
-  '/reports': '📊 Reports',
-  '/staff': '👥 Staff',
-  '/ai': '🤖 AI Intelligence',
-  '/store': '🛍️ Online Store',
-  '/vouchers': '🎟️ Vouchers',
-  '/community': '💬 Community',
-  '/subscription': '⭐ Subscription',
-  '/settings': '⚙️ Settings',
+  '/dashboard': 'dashboard',
+  '/khata': 'khata',
+  '/invoices': 'invoices',
+  '/inventory': 'inventory',
+  '/payments': 'payments',
+  '/reports': 'reports',
+  '/staff': 'staff',
+  '/ai': 'ai',
+  '/store': 'store',
+  '/vouchers': 'vouchers',
+  '/community': 'community',
+  '/subscription': 'subscription',
+  '/settings': 'settings',
 };
 
 export default function Header() {
@@ -31,6 +33,7 @@ export default function Header() {
   const { user: authUser, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
+  const isOnline = useOnlineStatus();
   
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -38,12 +41,26 @@ export default function Header() {
   const notifRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const shopRef = useRef<HTMLDivElement>(null);
+  const { t, currentLanguage, setLanguage } = useLanguageStore();
 
   const currentShop = shops.find((s: any) => s._id === currentShopId) || shops[0] || { name: 'Main Shop' };
 
-  const pageTitle = Object.entries(pageTitles).find(([path]) =>
+  const pageTitleKey = Object.entries(pageTitles).find(([path]) =>
     location.pathname.startsWith(path)
-  )?.[1] ?? 'Dashboard';
+  )?.[1] ?? 'dashboard';
+
+  const icons: Record<string, string> = {
+    dashboard: '🏠', khata: '📒', invoices: '📄', inventory: '📦',
+    payments: '💳', reports: '📊', staff: '👥', ai: '🤖',
+    store: '🛍️', vouchers: '🎟️', community: '💬', subscription: '⭐', settings: '⚙️'
+  };
+
+  const pageTitle = `${icons[pageTitleKey] || ''} ${t(pageTitleKey)}`;
+
+  const toggleLanguage = () => {
+    const nextLng = currentLanguage === 'en' ? 'hi' : 'en';
+    setLanguage(nextLng);
+  };
 
   const today = new Date().toLocaleDateString('en-IN', {
     weekday: 'long',
@@ -89,8 +106,13 @@ export default function Header() {
 
         {/* Page Title & Date */}
         <div className="flex-1 min-w-0">
-          <h2 className="font-display text-[15px] font-bold text-slate-900 hidden sm:block">
+          <h2 className="font-display text-[15px] font-bold text-slate-900 hidden sm:flex items-center gap-2">
             {pageTitle}
+            {!isOnline && (
+              <span className="flex items-center gap-1 px-2 py-0.5 bg-red-50 text-red-600 text-[10px] font-bold rounded-full animate-pulse border border-red-100">
+                <Wifi size={10} /> OFFLINE
+              </span>
+            )}
           </h2>
           <p className="text-[11px] text-slate-500 hidden sm:block">{today}</p>
         </div>
@@ -158,6 +180,14 @@ export default function Header() {
             </Button>
           </Link>
         )}
+
+        {/* Language Switcher */}
+        <button
+          onClick={toggleLanguage}
+          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-700 transition-colors"
+        >
+          {currentLanguage === 'en' ? 'हिन्दी' : 'EN'}
+        </button>
 
         {/* Search */}
         <div className="relative hidden lg:flex items-center">
