@@ -3,6 +3,7 @@ import { protect } from '../middleware/authMiddleware.ts';
 import LedgerEntry from '../models/LedgerEntry.ts';
 import Customer from '../models/Customer.ts';
 import Invoice from '../models/Invoice.ts';
+import Product from '../models/Product.ts';
 import cacheService from '../services/cacheService.ts';
 import mongoose from 'mongoose';
 
@@ -211,6 +212,43 @@ router.get('/top-products', async (req: any, res) => {
     res.json({ success: true, topProducts });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Top products error', error });
+  }
+});
+
+// GET /api/analytics/stock-value
+router.get('/stock-value', async (req: any, res) => {
+  try {
+    const ownerId = req.ownerId;
+    const { shopId } = req.query;
+    
+    const filter: any = { userId: ownerId };
+    if (shopId && shopId !== 'all') {
+      filter.shopId = shopId;
+    }
+    
+    const products = await Product.find(filter);
+    
+    let totalStockValue = 0;
+    let totalStockQty = 0;
+    let lowStockCount = 0;
+    
+    products.forEach(p => {
+      // Logic: CostPrice * Stock. If costPrice missing, use 70% of Price
+      const cost = p.costPrice || (p.price * 0.7);
+      totalStockValue += (p.stock || 0) * cost;
+      totalStockQty += (p.stock || 0);
+      if (p.stock <= (p.minStock || 5)) lowStockCount++;
+    });
+    
+    res.json({ 
+      success: true, 
+      totalStockValue, 
+      totalStockQty, 
+      lowStockCount,
+      productCount: products.length 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Stock value analysis error', error });
   }
 });
 

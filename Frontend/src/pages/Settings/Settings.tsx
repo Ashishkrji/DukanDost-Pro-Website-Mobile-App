@@ -13,6 +13,7 @@ const tabs = [
   { id: 'invoice', label: 'Invoices (Branding)' },
   { id: 'language', label: 'Language' },
   { id: 'payments', label: 'Payments' },
+  { id: 'controls', label: 'Admin Controls' },
 ];
 
 export default function Settings() {
@@ -77,7 +78,78 @@ export default function Settings() {
         </Card>
       )}
 
-      {/* Other tabs simplified for brevity in this step */}
+      {activeTab === 'controls' && (
+        <div className="space-y-6">
+           {/* Store Status */}
+           <Card className="p-6">
+              <h4 className="font-bold text-slate-900 mb-6 flex items-center gap-2 text-indigo-600"><Store size={18} /> Digital Dukan Customization</h4>
+              <div className="space-y-4">
+                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div>
+                       <p className="text-sm font-black text-slate-900">Online Store Status</p>
+                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Dukan ko online ya offline karein</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                       <input type="checkbox" className="sr-only peer" defaultChecked />
+                       <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-green-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-4">
+                    <InputField label="Delivery Charge (₹)" type="number" defaultValue="40" />
+                    <InputField label="Min Free Delivery Amount (₹)" type="number" defaultValue="500" />
+                 </div>
+              </div>
+           </Card>
+
+           {/* GST & Tax */}
+           <Card className="p-6">
+              <h4 className="font-bold text-slate-900 mb-6 flex items-center gap-2 text-orange-600"><Shield size={18} /> GST & Tax Controls</h4>
+              <div className="space-y-4">
+                 <SelectField 
+                    label="Default GST Rate (%)" 
+                    options={[{value:'0',label:'0% (Exempt)'},{value:'5',label:'5% (Food/Basic)'},{value:'12',label:'12%'},{value:'18',label:'18% (Standard)'},{value:'28',label:'28%'}]} 
+                    defaultValue="18"
+                 />
+                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                    <div>
+                       <p className="text-sm font-black text-slate-900">Enable Automated E-Invoice</p>
+                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Automatic IRN & QR generation</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                       <input type="checkbox" className="sr-only peer" />
+                       <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-orange-600 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+                    </label>
+                 </div>
+              </div>
+           </Card>
+
+           {/* WhatsApp Templates */}
+           <Card className="p-6">
+              <h4 className="font-bold text-slate-900 mb-6 flex items-center gap-2 text-green-600"><Bell size={18} /> WhatsApp Templates</h4>
+              <div className="space-y-4">
+                 <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Invoice Message Template</label>
+                    <textarea 
+                       className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all outline-none min-h-[100px]"
+                       defaultValue="Namaste! Your bill from {{shopName}} is ready. Total: ₹{{amount}}. View here: {{link}}"
+                    />
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest">Payment Reminder Template</label>
+                    <textarea 
+                       className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all outline-none min-h-[100px]"
+                       defaultValue="Reminder: You have a pending balance of ₹{{balance}} at {{shopName}}. Please clear it soon."
+                    />
+                 </div>
+              </div>
+           </Card>
+
+           <div className="flex justify-end">
+              <Button size="lg" className="bg-slate-900 h-14 px-8 rounded-2xl font-black uppercase tracking-widest" icon={<Save size={20} />}>Save Admin Settings</Button>
+           </div>
+        </div>
+      )}
     </div>
   );
 }

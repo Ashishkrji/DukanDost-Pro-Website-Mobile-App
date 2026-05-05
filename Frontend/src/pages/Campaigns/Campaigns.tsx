@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 export default function Campaigns() {
   const { token, user } = useAuthStore();
-  const { customers, showToast } = useStore();
+  const { customers, showToast, sendBulkCampaign } = useStore();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -70,18 +70,20 @@ export default function Campaigns() {
     }
   };
 
-  const handleSend = async (id: string) => {
+  const handleSend = async (campaign: any) => {
     setIsSending(true);
     try {
-      const { data } = await axios.post(
-        `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api'}/campaigns/${id}/send`, 
-        {}, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (data.success) {
-        showToast(`Campaign sent to ${data.summary.sent} customers!`, 'success');
-        fetchCampaigns();
+      if (campaign.audienceType === 'All Customers') {
+        await sendBulkCampaign(campaign.message);
+      } else {
+        const { data } = await axios.post(
+          `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api'}/campaigns/${campaign._id}/send`, 
+          {}, 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (data.success) showToast(`Campaign sent to ${data.summary.sent} customers!`, 'success');
       }
+      fetchCampaigns();
     } catch (err) {
       showToast('Failed to send broadcast', 'error');
     } finally {
@@ -175,7 +177,7 @@ export default function Campaigns() {
                     <td className="px-6 py-4 text-right">
                       {c.status === 'Draft' ? (
                         <Button 
-                          onClick={() => handleSend(c._id)}
+                          onClick={() => handleSend(c)}
                           loading={isSending}
                           variant="secondary" 
                           size="sm" 

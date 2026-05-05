@@ -121,7 +121,7 @@ export default function Coupons() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <Badge variant={coupon.type === 'percentage' ? 'orange' : 'blue'} className="font-bold">
+                    <Badge status={coupon.type === 'percentage' ? 'warning' : 'info'} className="font-bold">
                       {coupon.type === 'percentage' ? `${coupon.value}%` : `₹${coupon.value}`}
                     </Badge>
                   </td>

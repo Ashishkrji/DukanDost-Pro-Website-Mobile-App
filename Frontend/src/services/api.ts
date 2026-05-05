@@ -224,6 +224,8 @@ export const getTrends = (days?: number) =>
   api.get('/analytics/trends', { params: { days } }).then(r => r.data);
 export const getTopProductsStats = (limit?: number) => 
   api.get('/analytics/top-products', { params: { limit } }).then(r => r.data);
+export const getStockValueStats = (shopId?: string) =>
+  api.get('/analytics/stock-value', { params: { shopId } }).then(r => r.data);
 
 // ── Expenses ─────────────────────────────────────────────────
 export const getExpenses = (params?: { startDate?: string; endDate?: string; category?: string }) =>
@@ -252,6 +254,8 @@ export const createShop = (data: any) =>
 // ── WhatsApp ─────────────────────────────────────────────────
 export const sendWhatsAppReminder = (customerId: string) =>
   api.post('/whatsapp/remind', { customerId }).then(r => r.data);
+export const sendBulkWhatsApp = (data: { message: string; shopId?: string }) =>
+  api.post('/whatsapp/bulk-send', data).then(r => r.data);
 
 // ── Campaigns ────────────────────────────────────────────────
 export const getCampaigns = () => 
@@ -302,7 +306,6 @@ export const applyForLoan = (data: { amount: number; tenure: number; purpose: st
 export const getReturns = () => api.get('/returns').then(r => r.data);
 export const createReturn = (data: any) => api.post('/returns/create', data).then(r => r.data);
 
-export default api;
 // ── Public Store & Payments ────────────────────────────────
 export const getPublicCatalog = (shopId: string) =>
   api.get(`/public/catalog/${shopId}`).then(r => r.data);

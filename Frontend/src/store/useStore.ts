@@ -202,6 +202,7 @@ interface AppState {
     trends: any[];
     topProducts?: any[];
   };
+  coupons: any[];
 
   // UI State
   sidebarOpen: boolean;
@@ -232,6 +233,7 @@ interface AppState {
   fetchNotifications: () => Promise<void>;
   fetchVendors: () => Promise<void>;
   fetchInventoryHistory: (productId: string) => Promise<any[]>;
+  fetchCoupons: () => Promise<void>;
 
   // Mutation Actions
   addTransaction: (tx: Partial<Transaction>) => Promise<void>;
@@ -246,6 +248,8 @@ interface AppState {
   shareInvoice: (id: string) => Promise<any>;
   convertDocument: (id: string, targetType: string) => Promise<void>;
   addVoucher: (voucher: Partial<Voucher>) => Promise<void>;
+  addCoupon: (data: any) => Promise<void>;
+  deleteCoupon: (id: string) => Promise<void>;
 
   toggleVoucherStatus: (id: string) => Promise<void>;
   likePost: (postId: string) => void;
@@ -258,7 +262,8 @@ interface AppState {
   addVendor: (vendor: Partial<Vendor>) => Promise<void>;
   fetchShops: () => Promise<void>;
   addShop: (shop: any) => Promise<void>;
-  setCurrentShop: (shopId: string) => void;
+  setCurrentShop: (shopId: string | null) => void;
+  updateShop: (id: string, data: any) => Promise<void>;
   fetchAnalytics: () => Promise<void>;
   generateEInvoice: (id: string) => Promise<any>;
   initiatePayment: (amount: number, invoiceId?: string) => Promise<any>;
@@ -279,10 +284,8 @@ interface AppState {
   // Report Actions (M10)
   fetchDayBook: (date: string) => Promise<any>;
   fetchItemProfitReport: () => Promise<any[]>;
-
-  fetchAnalytics: () => Promise<void>;
-  fetchShops: () => Promise<void>;
-  setCurrentShop: (shopId: string | null) => void;
+  fetchStockValue: (shopId?: string) => Promise<any>;
+  sendBulkCampaign: (message: string) => Promise<void>;
 }
 
 // ===========================
@@ -624,6 +627,26 @@ export const useStore = create<AppState>()(
         get().showToast(`Shop switched!`);
       },
 
+      addShop: async (shop) => {
+        try {
+          const res = await api.createShop(shop);
+          if (res.success) {
+            set((state) => ({ shops: [...state.shops, res.shop] }));
+            get().showToast('Shop added successfully!');
+          }
+        } catch (err) { get().showToast('Failed to add shop', 'error'); }
+      },
+
+      updateShop: async (id, data) => {
+        try {
+          const res = await api.updateShop(id, data);
+          if (res.success) {
+            set((state) => ({ shops: state.shops.map(s => (s._id === id || s.id === id) ? res.shop : s) }));
+            get().showToast('Shop settings updated!');
+          }
+        } catch (err) { get().showToast('Update failed', 'error'); }
+      },
+
       fetchAnalytics: async () => {
         try {
           const shopId = get().currentShopId;
@@ -715,6 +738,18 @@ export const useStore = create<AppState>()(
         try {
           return await api.getItemProfitReport();
         } catch (err) { return []; }
+      },
+      fetchStockValue: async (shopId) => {
+        try {
+          return await api.getStockValueStats(shopId);
+        } catch (err) { return null; }
+      },
+      sendBulkCampaign: async (message) => {
+        try {
+          const shopId = get().currentShopId;
+          await api.sendBulkWhatsApp({ message, shopId: shopId || undefined });
+          get().showToast('Bulk campaign started!');
+        } catch (err) { get().showToast('Campaign failed', 'error'); }
       },
     }),
     {

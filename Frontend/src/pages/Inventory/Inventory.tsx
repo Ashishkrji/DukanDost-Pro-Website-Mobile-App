@@ -33,11 +33,19 @@ function InventoryContent() {
   
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [barcodeQty, setBarcodeQty] = useState('10');
+  const [stockStats, setStockStats] = useState<any>(null);
 
   useEffect(() => {
     fetchProducts();
     fetchWarehouses('default_shop');
+    loadStockStats();
   }, []);
+
+  const loadStockStats = async () => {
+    const { fetchStockValue } = useStore.getState();
+    const stats = await fetchStockValue();
+    setStockStats(stats);
+  };
 
   const handlePrintBarcodes = () => {
     showToast(`${barcodeQty} labels printing...`);
@@ -69,13 +77,20 @@ function InventoryContent() {
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
          <StatCard 
             title="Total Stock Value" 
-            value={`₹${totalStockValue.toLocaleString()}`} 
+            value={`₹${(stockStats?.totalStockValue || totalStockValue).toLocaleString()}`} 
             icon={<IndianRupee size={20} />} 
             topBorder="blue" 
-            subtitle="Estimated sales value"
+            subtitle="Based on Cost Price"
+         />
+         <StatCard 
+            title="Total Quantity" 
+            value={(stockStats?.totalStockQty || products.reduce((acc, p) => acc + p.stock, 0)).toString()} 
+            icon={<Package size={20} />} 
+            topBorder="indigo" 
+            subtitle="Units in Hand"
          />
          <StatCard 
             title="Low Stock Alert" 
