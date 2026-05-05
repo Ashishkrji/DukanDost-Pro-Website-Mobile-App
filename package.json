@@ -1,5 +1,16 @@
 {
-  "dependencies": {
-    "docx": "^9.6.1"
+  "name": "dukandost-pro",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install-all": "npm install && cd Backend && npm install && cd ../Frontend && npm install",
+    "build": "cd Frontend && npm install && npm run build",
+    "start": "cd Backend && NODE_ENV=production npm start",
+    "dev": "concurrently \"npm run dev-server\" \"npm run dev-client\"",
+    "dev-server": "cd Backend && npm run dev",
+    "dev-client": "cd Frontend && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

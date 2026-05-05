@@ -4,6 +4,10 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import { connectDB } from './config/db.ts';
 import routes from './routes/index.ts';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { initReminderScheduler } from './utils/scheduler.ts';
 import { initSentry, sentryErrorHandler } from './config/sentry.ts';
 
@@ -31,7 +35,7 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 app.use(compression());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : '*',
   credentials: true
 }));
 app.use(cookieParser());
@@ -54,6 +58,18 @@ app.get('/health', (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ── Serve Frontend in Production ───────────────────────────
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../Frontend/dist');
+  app.use(express.static(distPath));
+  
+  app.get('*', (req, res, next) => {
+    // If request is for /api, skip to routes
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.resolve(distPath, 'index.html'));
+  });
+}
 
 // ── 404 Handler ────────────────────────────────────────────
 app.use((_req, res) => {

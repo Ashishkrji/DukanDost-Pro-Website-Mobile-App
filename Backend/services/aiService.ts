@@ -3,9 +3,10 @@ import Customer from '../models/Customer.ts';
 import Transaction from '../models/Transaction.ts';
 import Product from '../models/Product.ts';
 
-// ── OpenRouter Integration ──────────────────────────────────
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL = 'meta-llama/llama-3-8b-instruct:free'; // or any preferred model
+// ── Agent Router Integration ────────────────────────────────
+const AGENT_ROUTER_API_KEY = process.env.AGENT_ROUTER_API_KEY;
+const AGENT_ROUTER_BASE_URL = process.env.AGENT_ROUTER_BASE_URL || 'https://api.agentsrouter.com/v1';
+const MODEL = process.env.AI_MODEL || 'meta-llama/llama-3-8b-instruct:free';
 
 export const processAIChat = async (userId: string, messages: any[]) => {
   try {
@@ -29,10 +30,10 @@ export const processAIChat = async (userId: string, messages: any[]) => {
       identify the intent and return a structured tool call.
     `;
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch(`${AGENT_ROUTER_BASE_URL}/chat/completions`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${AGENT_ROUTER_API_KEY}`,
         'HTTP-Referer': 'https://dukandost.pro',
         'X-Title': 'DukanDost Pro',
         'Content-Type': 'application/json',
