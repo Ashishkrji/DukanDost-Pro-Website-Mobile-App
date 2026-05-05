@@ -29,6 +29,7 @@ import reportRoutes from './reportRoutes.ts';
 import publicRoutes from './publicRoutes.ts';
 import loanRoutes from './loanRoutes.ts';
 import returnRoutes from './returnRoutes.ts';
+import couponRoutes from './couponRoutes.ts';
 
 const router = express.Router();
 
@@ -62,5 +63,6 @@ router.use('/reports', reportRoutes);
 router.use('/public', publicRoutes);
 router.use('/loans', loanRoutes);
 router.use('/returns', returnRoutes);
+router.use('/coupons', couponRoutes);
 
 export default router;

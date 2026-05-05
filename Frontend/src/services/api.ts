@@ -312,3 +312,12 @@ export const createPublicOrder = (data: { amount: number; receipt: string }) =>
 
 export const verifyPublicPayment = (data: any) =>
   api.post('/public/payments/verify', data).then(r => r.data);
+
+// ── Coupons (M14) ────────────────────────────────────────────
+export const getCoupons = () => api.get('/coupons').then(r => r.data);
+export const createCoupon = (data: any) => api.post('/coupons', data).then(r => r.data);
+export const deleteCoupon = (id: string) => api.delete(`/coupons/${id}`).then(r => r.data);
+export const validateCoupon = (data: { code: string; orderValue: number; shopId: string }) => 
+  api.post('/coupons/validate', data).then(r => r.data);
+
+export default api;

@@ -30,6 +30,7 @@ import { Vendors, VendorDetail } from './pages/Vendors';
 import Campaigns from './pages/Campaigns/Campaigns';
 import Loans from './pages/Fintech/Loans';
 import CreditDebitNotes from './pages/Returns/CreditDebitNotes';
+import Coupons from './pages/Marketing/Coupons';
 import Loyalty from './pages/Business/Loyalty';
 
 import NewInvoice from './pages/Billing/NewInvoice';
@@ -176,7 +177,8 @@ export default function App() {
           <Route path="/campaigns" element={<Campaigns />} />
 
           {/* Vouchers & Loyalty */}
-          <Route path="/vouchers" element={<Vouchers />} />
+          <Route path="/vouchers" element={<Coupons />} />
+          <Route path="/coupons" element={<Coupons />} />
           <Route path="/loyalty" element={<Loyalty />} />
 
           {/* Community */}

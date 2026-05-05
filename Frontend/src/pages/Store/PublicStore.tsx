@@ -13,6 +13,10 @@ export default function PublicStore() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
 
   useEffect(() => {
     const fetchStoreData = async () => {
@@ -62,10 +66,32 @@ export default function PublicStore() {
 
   const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
   const totalAmount = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const finalAmount = totalAmount - discountAmount;
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode) return;
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const res = await api.validateCoupon({
+        code: couponCode,
+        orderValue: totalAmount,
+        shopId: shopId!
+      });
+      setAppliedCoupon(res);
+      setCouponCode('');
+    } catch (err: any) {
+      setCouponError(err.response?.data?.message || 'Invalid coupon');
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
 
   const handleWhatsAppOrder = () => {
     const orderItems = cart.map(item => `${item.name} (x${item.qty}) - ₹${item.price * item.qty}`).join('\n');
-    const msg = `Namaste! I want to order from your shop:\n\n${orderItems}\n\n*Total: ₹${totalAmount}*`;
+    const msg = `Namaste! I want to order from your shop:\n\n${orderItems}\n\n*Total: ₹${totalAmount}*\n${appliedCoupon ? `*Discount: ₹${discountAmount}*\n*Final: ₹${finalAmount}*` : ''}`;
     window.open(`https://wa.me/${shop?.phone}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -81,7 +107,7 @@ export default function PublicStore() {
 
     try {
       const orderData = await api.createPublicOrder({ 
-        amount: totalAmount, 
+        amount: finalAmount, 
         receipt: `receipt_${Date.now()}` 
       });
 
@@ -203,11 +229,45 @@ export default function PublicStore() {
          <div className="fixed bottom-6 left-4 right-4 z-40 animate-[slideUp_0.3s_ease] max-w-lg mx-auto">
             <Card className="p-4 bg-white shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.2)] border-none rounded-3xl">
                <div className="flex justify-between items-center mb-4 px-2">
-                  <div>
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Amount</p>
-                     <p className="text-2xl font-black text-slate-900">₹{totalAmount}</p>
+                  <div className="flex-1">
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payable Amount</p>
+                     <div className="flex items-baseline gap-2">
+                        <p className="text-2xl font-black text-slate-900">₹{finalAmount}</p>
+                        {discountAmount > 0 && (
+                          <p className="text-xs text-slate-400 line-through">₹{totalAmount}</p>
+                        )}
+                     </div>
                   </div>
-                  <Badge className="bg-green-100 text-green-700 border-none">{totalItems} Items</Badge>
+                  <div className="text-right">
+                     <Badge className="bg-green-100 text-green-700 border-none mb-1">{totalItems} Items</Badge>
+                     {appliedCoupon && (
+                        <p className="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full">
+                           Code: {appliedCoupon.code} applied
+                        </p>
+                     )}
+                  </div>
+               </div>
+
+               {/* Coupon Section */}
+               <div className="mb-4 px-2">
+                  <div className="flex gap-2">
+                     <input 
+                        type="text" 
+                        placeholder="Apply Coupon (e.g. SAVE10)" 
+                        className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2 text-sm font-bold placeholder:text-slate-400 focus:ring-2 focus:ring-orange-500 transition-all uppercase"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                     />
+                     <Button 
+                        size="sm" 
+                        onClick={handleApplyCoupon} 
+                        disabled={couponLoading || !couponCode}
+                        className="bg-slate-900 rounded-xl"
+                     >
+                        {couponLoading ? '...' : 'Apply'}
+                     </Button>
+                  </div>
+                  {couponError && <p className="text-[10px] text-red-500 mt-1 font-bold ml-1">{couponError}</p>}
                </div>
                
                <div className="flex gap-3">

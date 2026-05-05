@@ -299,6 +299,7 @@ export const useStore = create<AppState>()(
       staff: [],
       payments: [],
       invoices: [],
+      coupons: [],
       vouchers: [],
       communityPosts: [],
       orders: [],
@@ -497,6 +498,29 @@ export const useStore = create<AppState>()(
           set((state) => ({ invoices: [newDoc, ...state.invoices] }));
           get().showToast(`Converted to ${targetType} successfully!`);
         } catch (error) { get().showToast('Conversion failed', 'error'); }
+      },
+
+      fetchCoupons: async () => {
+        try {
+          const data = await api.getCoupons();
+          set({ coupons: data });
+        } catch (err) { console.error('Failed to fetch coupons'); }
+      },
+
+      addCoupon: async (coupon) => {
+        try {
+          const newCoupon = await api.createCoupon(coupon);
+          set((state) => ({ coupons: [newCoupon, ...state.coupons] }));
+          get().showToast('Coupon created!');
+        } catch (error) { get().showToast(`Failed to create coupon`, 'error'); }
+      },
+
+      deleteCoupon: async (id) => {
+        try {
+          await api.deleteCoupon(id);
+          set((state) => ({ coupons: state.coupons.filter(c => (c.id || c._id) !== id) }));
+          get().showToast('Coupon deleted');
+        } catch (error) { get().showToast(`Failed to delete coupon`, 'error'); }
       },
 
       addVoucher: async (voucher) => {
