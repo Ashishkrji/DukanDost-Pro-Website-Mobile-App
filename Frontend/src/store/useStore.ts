@@ -87,10 +87,18 @@ export interface Invoice {
   total?: number;    // for consistency
   gst?: number;
   status: string;
-  items?: Array<{ name: string; qty: number; price: number; total: number; productId?: string }>;
+  items?: Array<{ name: string; qty: number; price: number; total: number; productId?: string; gstRate?: number }>;
   type: 'INVOICE' | 'QUOTATION' | 'ESTIMATE' | 'PROFORMA' | 'CHALLAN' | 'PURCHASE_ORDER' | 'CREDIT_NOTE' | 'DEBIT_NOTE';
   vendorId?: string;
   vendorName?: string;
+  isGST?: boolean;
+  einvoiceDetails?: {
+    irn?: string;
+    ackNumber?: string;
+    ackDate?: string;
+    qrCode?: string;
+    status: 'PENDING' | 'GENERATED' | 'CANCELLED' | 'FAILED';
+  };
 }
 
 export interface Transaction {
@@ -248,6 +256,14 @@ interface AppState {
   closeUpgradePopup: () => void;
 
   addVendor: (vendor: Partial<Vendor>) => Promise<void>;
+  fetchShops: () => Promise<void>;
+  addShop: (shop: any) => Promise<void>;
+  setCurrentShop: (shopId: string) => void;
+  fetchAnalytics: () => Promise<void>;
+  generateEInvoice: (id: string) => Promise<any>;
+  initiatePayment: (amount: number, invoiceId?: string) => Promise<any>;
+
+  // Warehouse (M6)
   updateVendor: (id: string, data: Partial<Vendor>) => Promise<void>;
   addInventoryEntry: (data: any) => Promise<void>;
 

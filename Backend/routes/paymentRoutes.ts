@@ -1,3 +1,4 @@
+import express from 'express';
 import { updatePaymentSettings, getPaymentSettings } from '../controllers/paymentSettingsController.ts';
 import { getPayments, createOrder, verifyPayment } from '../controllers/paymentController.ts';
 import { protect } from '../middleware/authMiddleware.ts';
