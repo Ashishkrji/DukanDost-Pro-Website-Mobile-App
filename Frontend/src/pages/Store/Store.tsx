@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { ShoppingBag, Search, Filter, Package, Clock, CheckCircle, XCircle, Truck, MoreVertical, Share2, Globe, Eye, MessageCircle } from 'lucide-react';
+import { ShoppingBag, Search, Filter, Package, Clock, CheckCircle, XCircle, Truck, MoreVertical, Share2, Globe, Eye, MessageCircle, Settings, CreditCard } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { cn } from '@/lib/utils';
 import { Button, Badge, Card, PageHeader, SearchInput, StatCard, Tabs, EmptyState } from '@/components/ui';
@@ -85,7 +85,12 @@ export default function Store() {
               <div className="flex justify-between items-center mb-6">
                  <h3 className="font-bold text-slate-900">Live Catalog Manager</h3>
                  <div className="flex gap-2">
-                    <SearchInput placeholder="Search items..." className="w-64" />
+                    <SearchInput 
+                      placeholder="Search items..." 
+                      className="w-64" 
+                      value={searchTerm} 
+                      onChange={setSearchTerm} 
+                    />
                     <Button variant="secondary" icon={<Filter size={16} />} />
                  </div>
               </div>

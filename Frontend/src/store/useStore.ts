@@ -35,6 +35,8 @@ export interface Customer {
   status: 'Udhaar' | 'Up-to-date' | 'Overdue';
   lastTransactionDate: string;
   isActive?: boolean;
+  loyaltyPoints?: number;
+  loyaltyTier?: 'Bronze' | 'Silver' | 'Gold' | 'Platinum';
 }
 
 export interface Vendor {

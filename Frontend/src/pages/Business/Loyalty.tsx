@@ -122,7 +122,7 @@ export default function Loyalty() {
                 <SearchInput 
                   placeholder="Search grahak..." 
                   value={searchTerm} 
-                  onChange={(e) => setSearchTerm(e.target.value)} 
+                  onChange={setSearchTerm} 
                 />
               </div>
            </div>
@@ -157,7 +157,7 @@ export default function Loyalty() {
                           status={
                             customer.loyaltyTier === 'Platinum' ? 'purple' : 
                             customer.loyaltyTier === 'Gold' ? 'warning' : 
-                            customer.loyaltyTier === 'Silver' ? 'info' : 'default'
+                            customer.loyaltyTier === 'Silver' ? 'info' : 'neutral'
                           }
                         >
                           {customer.loyaltyTier}
