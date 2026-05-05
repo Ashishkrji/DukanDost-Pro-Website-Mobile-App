@@ -3,7 +3,7 @@ import {
   BarChart3, Download, Calendar, 
   TrendingUp, TrendingDown, Users, 
   ArrowRight, FileText, PieChart,
-  Shield, Truck, Search, BookOpen, IndianRupee, Link as LinkIcon, Share2, FileCode, Printer
+  Shield, Truck, Search, BookOpen, IndianRupee, Link as LinkIcon, Share2, FileCode, Printer, Package
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { Button, Badge, Card, PageHeader, StatCard, Tabs, EmptyState, Modal, InputField } from '@/components/ui';
