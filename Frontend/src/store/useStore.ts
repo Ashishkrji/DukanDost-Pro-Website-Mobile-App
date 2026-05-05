@@ -62,7 +62,9 @@ export interface Product {
   barcode?: string;
   stock: number;
   price: number;
+  costPrice?: number;
   gstRate?: number;
+  minStock?: number;
   status: 'IN STOCK' | 'LOW STOCK' | 'OUT OF STOCK';
   icon?: string;
   unit?: string;
