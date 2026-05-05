@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Send, Users, Calendar, BarChart, 
   Plus, Search, Filter, Trash2, 
@@ -36,7 +36,7 @@ export default function Campaigns() {
 
   const fetchCampaigns = async () => {
     try {
-      const { data } = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/campaigns`, {
+      const { data } = await axios.get(`${(import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api'}/campaigns`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (data.success) setCampaigns(data.campaigns);
@@ -56,7 +56,7 @@ export default function Campaigns() {
 
     try {
       const { data } = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/campaigns`, 
+        `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api'}/campaigns`, 
         formData, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -74,7 +74,7 @@ export default function Campaigns() {
     setIsSending(true);
     try {
       const { data } = await axios.post(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/campaigns/${id}/send`, 
+        `${(import.meta as any).env.VITE_API_URL || 'http://localhost:5000/api'}/campaigns/${id}/send`, 
         {}, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -91,8 +91,8 @@ export default function Campaigns() {
 
   const stats = [
     { label: 'Total Campaigns', value: campaigns.length, icon: BarChart, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { label: 'Messages Sent', value: campaigns.reduce((acc, c) => acc + (c.recipientCount || 0), 0), icon: Send, color: 'text-green-500', bg: 'bg-green-50' },
-    { label: 'Active Drafts', value: campaigns.filter(c => c.status === 'Draft').length, icon: MessageCircle, color: 'text-orange-500', bg: 'bg-orange-50' },
+    { label: 'Messages Sent', value: campaigns.reduce((acc: number, c: any) => acc + (c.recipientCount || 0), 0), icon: Send, color: 'text-green-500', bg: 'bg-green-50' },
+    { label: 'Active Drafts', value: campaigns.filter((c: any) => c.status === 'Draft').length, icon: MessageCircle, color: 'text-orange-500', bg: 'bg-orange-50' },
     { label: 'Audience Reach', value: customers.length, icon: Users, color: 'text-purple-500', bg: 'bg-purple-50' },
   ];
 
@@ -151,7 +151,7 @@ export default function Campaigns() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {campaigns.map((c) => (
+                {campaigns.map((c: any) => (
                   <tr key={c._id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
@@ -268,7 +268,7 @@ export default function Campaigns() {
             placeholder="e.g. Diwali Dhamaka Sale 2024"
             required
             value={formData.title}
-            onChange={e => setFormData({...formData, title: e.target.value})}
+            onChange={(e: any) => setFormData({...formData, title: e.target.value})}
           />
 
           <SelectField 
@@ -279,7 +279,7 @@ export default function Campaigns() {
               { value: 'Top Customers', label: 'Top 10 High-Value Customers' }
             ]}
             value={formData.audienceType}
-            onChange={e => setFormData({...formData, audienceType: e.target.value})}
+            onChange={(e: any) => setFormData({...formData, audienceType: e.target.value})}
           />
 
           <div className="space-y-2">
@@ -290,7 +290,7 @@ export default function Campaigns() {
             <textarea 
               className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all outline-none min-h-[160px]"
               value={formData.message}
-              onChange={e => setFormData({...formData, message: e.target.value})}
+              onChange={(e: any) => setFormData({...formData, message: e.target.value})}
               placeholder="Enter your WhatsApp marketing message here..."
               required
             />
