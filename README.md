@@ -13,11 +13,14 @@
 - **AI Agent (Tool Calling)**: A persistent AI assistant (Llama 3/Gemini) that doesn't just talk—it **acts**. Ask it to "Add a customer named Rahul with 500 balance" or "Add 50 Milk packets to inventory," and it handles the database operations for you.
 - **AI Business Intelligence**: Proprietary "Business Health Score," automated recovery risk alerts, and predictive cashflow recommendations.
 - **Digital Khata System**: Professional-grade ledger for tracking customer credit (Udhaar) and payments with automated WhatsApp reminders.
-- **Smart Invoicing & Inventory Sync**: GST-compliant invoice generation with **atomic stock deduction**. Sales are automatically synced with your inventory levels in real-time.
-- **Staff & Attendance Management**: Full CRUD for staff members with daily attendance tracking and performance metrics.
-- **Marketing Campaigns**: Promotional WhatsApp broadcast engine with audience segmentation for Business plan users.
-- **Financing Visibility**: Integrated credit grading and loan eligibility scoring based on real business transaction history.
+- **Digital Dukan (Online Store)**: Your own e-commerce website with Razorpay integration, coupon systems, and WhatsApp ordering.
+- **Smart Invoicing & Inventory Sync**: GST-compliant invoice generation with **atomic stock deduction** and **E-Invoice (IRN/QR)** support.
+- **Warehouse & Stock Analysis**: Manage multiple godowns and analyze total stock value based on cost prices.
+- **Marketing & Bulk Campaigns**: Promotional WhatsApp broadcast engine with editable templates and customer segmentation.
+- **Admin Control Panel**: Full control over store status, delivery fees, tax settings, and message templates.
 - **Modern & Responsive UI**: Stunning glassmorphic design built with React 19, TailwindCSS, and Framer Motion.
+
+📖 **Check out the [Full Walkthrough](./WALKTHROUGH.md) for more details.**
 
 ---
 

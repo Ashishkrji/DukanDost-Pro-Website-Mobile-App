@@ -251,6 +251,9 @@ export const getShops = () =>
 export const createShop = (data: any) =>
   api.post('/shops', data).then(r => r.data);
 
+export const updateShop = (id: string, data: any) =>
+  api.put(`/shops/${id}`, data).then(r => r.data);
+
 // ── WhatsApp ─────────────────────────────────────────────────
 export const sendWhatsAppReminder = (customerId: string) =>
   api.post('/whatsapp/remind', { customerId }).then(r => r.data);

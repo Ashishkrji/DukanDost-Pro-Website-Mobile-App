@@ -89,7 +89,7 @@ function InventoryContent() {
             title="Total Quantity" 
             value={(stockStats?.totalStockQty || products.reduce((acc, p) => acc + p.stock, 0)).toString()} 
             icon={<Package size={20} />} 
-            topBorder="indigo" 
+            topBorder="purple" 
             subtitle="Units in Hand"
          />
          <StatCard 
