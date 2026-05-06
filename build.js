@@ -10,7 +10,7 @@ esbuild.build({
   platform: 'node',
   target: 'node22',
   format: 'esm',
-  outfile: './hostinger-entry.js',
+  outfile: './Backend/hostinger-entry.js',
   external: [...externals, 'path', 'url', 'child_process', 'fs', 'crypto'],
   logLevel: 'info',
 }).catch(() => process.exit(1));
